@@ -1,4 +1,5 @@
 using Jabartah.Trivia.Application.Abstractions;
+using Jabartah.Trivia.Application.Categories.ListCategories;
 using Jabartah.Trivia.Application.GameSessions.AwardPoints;
 using Jabartah.Trivia.Application.GameSessions.CreateGameSession;
 using Jabartah.Trivia.Application.GameSessions.GetBoard;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetBoardQuery, BoardDto>, GetBoardHandler>();
         services.AddScoped<ICommandHandler<SelectQuestionCommand, SelectQuestionResult>, SelectQuestionHandler>();
         services.AddScoped<ICommandHandler<AwardPointsCommand, AwardPointsResult>, AwardPointsHandler>();
+        services.AddScoped<IQueryHandler<ListCategoriesQuery, List<CategoryDto>>, ListCategoriesHandler>();
 
         return services;
     }

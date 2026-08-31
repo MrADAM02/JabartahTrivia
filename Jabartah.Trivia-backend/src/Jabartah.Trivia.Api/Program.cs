@@ -54,5 +54,6 @@ app.Use(async (context, next) =>
 
 app.UseCors();
 app.MapGameSessionEndpoints();
+app.MapCategoryEndpoints();
 
 app.Run();
