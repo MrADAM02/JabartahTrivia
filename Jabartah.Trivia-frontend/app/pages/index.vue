@@ -55,7 +55,7 @@ async function startGame() {
     <UCard class="w-full max-w-2xl">
       <template #header>
         <h1 class="text-3xl sm:text-4xl font-black text-center text-primary">
-          جبرتة
+          جولة
         </h1>
         <p class="text-center text-muted mt-1">
           لعبة مسابقات جماعية للعائلة والأصدقاء
