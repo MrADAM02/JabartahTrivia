@@ -1,0 +1,19 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Nuxt / Node
+node_modules/
+.nuxt/
+.output/
+.data/
+dist/
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+*.log
