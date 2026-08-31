@@ -9,6 +9,10 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  devServer: {
+    port: 3030
+  },
+
   css: ['~/assets/css/main.css'],
 
   ssr: false,

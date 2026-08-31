@@ -12,7 +12,7 @@ const errorMessage = ref('')
 onMounted(async () => {
   try {
     categories.value = await listCategories()
-    selectedCategoryIds.value = categories.value.map((c) => c.id)
+    selectedCategoryIds.value = categories.value.map(c => c.id)
   } catch {
     errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
   }
@@ -26,9 +26,9 @@ function toggleCategory(id: string) {
 
 const canStart = computed(
   () =>
-    teamNames.value.every((name) => name.trim().length > 0) &&
-    selectedCategoryIds.value.length > 0 &&
-    !loading.value
+    teamNames.value.every(name => name.trim().length > 0)
+    && selectedCategoryIds.value.length > 0
+    && !loading.value
 )
 
 async function startGame() {
@@ -64,7 +64,9 @@ async function startGame() {
 
       <div class="space-y-8">
         <section class="space-y-3">
-          <h2 class="text-lg font-bold">الفرق</h2>
+          <h2 class="text-lg font-bold">
+            الفرق
+          </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <UInput
               v-for="(_, i) in teamNames"
@@ -77,7 +79,9 @@ async function startGame() {
         </section>
 
         <section class="space-y-3">
-          <h2 class="text-lg font-bold">اختر الفئات</h2>
+          <h2 class="text-lg font-bold">
+            اختر الفئات
+          </h2>
           <div class="flex flex-wrap gap-2">
             <UButton
               v-for="category in categories"
