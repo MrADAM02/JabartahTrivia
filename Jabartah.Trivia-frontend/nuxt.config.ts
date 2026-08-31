@@ -5,22 +5,22 @@ export default defineNuxtConfig({
     '@nuxt/ui'
   ],
 
+  ssr: false,
+
   devtools: {
     enabled: true
   },
 
-  devServer: {
-    port: 3030
-  },
-
   css: ['~/assets/css/main.css'],
-
-  ssr: false,
 
   runtimeConfig: {
     public: {
       apiBase: 'http://localhost:5081'
     }
+  },
+
+  devServer: {
+    port: 3030
   },
 
   compatibilityDate: '2026-06-30',

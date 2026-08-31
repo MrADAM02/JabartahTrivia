@@ -16,7 +16,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins(builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:3000")
+        policy.WithOrigins(builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:3030")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -32,6 +32,8 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     await DatabaseSeeder.SeedAsync(db);
+    await PasswordDatabaseSeeder.SeedAsync(db);
+    await RankingDatabaseSeeder.SeedAsync(db);
 }
 
 app.Use(async (context, next) =>
@@ -55,5 +57,10 @@ app.Use(async (context, next) =>
 app.UseCors();
 app.MapGameSessionEndpoints();
 app.MapCategoryEndpoints();
+app.MapPasswordGameEndpoints();
+app.MapPasswordCategoryEndpoints();
+app.MapRevealEndpoints();
+app.MapRankingGameEndpoints();
+app.MapRankingCategoryEndpoints();
 
 app.Run();

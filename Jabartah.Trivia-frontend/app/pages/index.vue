@@ -1,125 +1,43 @@
 <script setup lang="ts">
-import type { CategoryDto } from '~/types/api'
-
-const { listCategories, createGameSession } = useApi()
-
-const teamNames = ref(['فريق ١', 'فريق ٢'])
-const categories = ref<CategoryDto[]>([])
-const selectedCategoryIds = ref<string[]>([])
-const loading = ref(false)
-const errorMessage = ref('')
-
-onMounted(async () => {
-  try {
-    categories.value = await listCategories()
-    selectedCategoryIds.value = categories.value.map(c => c.id)
-  } catch {
-    errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
-  }
-})
-
-function toggleCategory(id: string) {
-  const index = selectedCategoryIds.value.indexOf(id)
-  if (index === -1) selectedCategoryIds.value.push(id)
-  else selectedCategoryIds.value.splice(index, 1)
-}
-
-const canStart = computed(
-  () =>
-    teamNames.value.every(name => name.trim().length > 0)
-    && selectedCategoryIds.value.length > 0
-    && !loading.value
-)
-
-async function startGame() {
-  errorMessage.value = ''
-  loading.value = true
-  try {
-    const result = await createGameSession(
-      teamNames.value,
-      selectedCategoryIds.value
-    )
-    await navigateTo(`/game/${result.gameSessionId}`)
-  } catch {
-    errorMessage.value = 'تعذر إنشاء الجلسة. حاول مرة أخرى.'
-  } finally {
-    loading.value = false
-  }
-}
+const modes = [
+  { to: '/trivia/setup', icon: '🎯', title: 'لعبة الأسئلة', description: 'اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط' },
+  { to: '/password/setup', icon: '🤫', title: 'كلمة السر', description: 'لمّح لفريقك بكلمة واحدة ليخمنوا الكلمة السرية' },
+  { to: '/ranking/setup', icon: '🔢', title: 'رتبها', description: 'رتب البطاقات بالترتيب الصحيح قبل الوقت' }
+]
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center p-4 sm:p-8 bg-linear-to-b from-primary-50 to-white dark:from-gray-950 dark:to-gray-900"
-  >
-    <UCard class="w-full max-w-2xl">
-      <template #header>
-        <h1 class="text-3xl sm:text-4xl font-black text-center text-primary">
+  <div class="min-h-screen flex items-center justify-center p-4 sm:p-8 bg-linear-to-b from-primary-50 to-white dark:from-gray-950 dark:to-gray-900">
+    <div class="w-full max-w-4xl space-y-8">
+      <div class="text-center">
+        <h1 class="text-4xl sm:text-5xl font-black text-primary">
           جولة
         </h1>
-        <p class="text-center text-muted mt-1">
+        <p class="text-muted mt-2">
           لعبة مسابقات جماعية للعائلة والأصدقاء
         </p>
-      </template>
-
-      <div class="space-y-8">
-        <section class="space-y-3">
-          <h2 class="text-lg font-bold">
-            الفرق
-          </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <UInput
-              v-for="(_, i) in teamNames"
-              :key="i"
-              v-model="teamNames[i]"
-              size="xl"
-              :placeholder="`اسم الفريق ${i + 1}`"
-            />
-          </div>
-        </section>
-
-        <section class="space-y-3">
-          <h2 class="text-lg font-bold">
-            اختر الفئات
-          </h2>
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              v-for="category in categories"
-              :key="category.id"
-              :color="
-                selectedCategoryIds.includes(category.id)
-                  ? 'primary'
-                  : 'neutral'
-              "
-              :variant="
-                selectedCategoryIds.includes(category.id) ? 'solid' : 'outline'
-              "
-              size="lg"
-              @click="toggleCategory(category.id)"
-            >
-              <span v-if="category.icon">{{ category.icon }}</span>
-              {{ category.name }}
-            </UButton>
-          </div>
-        </section>
-
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="subtle"
-          :title="errorMessage"
-        />
-
-        <UButton
-          block
-          size="xl"
-          :loading="loading"
-          :disabled="!canStart"
-          @click="startGame"
-        >
-          ابدأ اللعبة
-        </UButton>
       </div>
-    </UCard>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <NuxtLink
+          v-for="mode in modes"
+          :key="mode.to"
+          :to="mode.to"
+          class="block"
+        >
+          <UCard class="h-full text-center hover:ring-2 hover:ring-primary transition-all cursor-pointer">
+            <div class="text-5xl mb-3">
+              {{ mode.icon }}
+            </div>
+            <h2 class="text-xl font-bold mb-2">
+              {{ mode.title }}
+            </h2>
+            <p class="text-muted text-sm">
+              {{ mode.description }}
+            </p>
+          </UCard>
+        </NuxtLink>
+      </div>
+    </div>
   </div>
 </template>

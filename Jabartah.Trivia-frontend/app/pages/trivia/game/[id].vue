@@ -71,14 +71,28 @@ function closeModal() {
 
 <template>
   <div class="min-h-screen p-3 sm:p-6 flex flex-col gap-4">
-    <div v-if="loading" class="flex-1 flex items-center justify-center">
-      <UIcon name="i-lucide-loader-circle" class="animate-spin size-10 text-primary" />
+    <div
+      v-if="loading"
+      class="flex-1 flex items-center justify-center"
+    >
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="animate-spin size-10 text-primary"
+      />
     </div>
 
-    <UAlert v-else-if="errorMessage && !board" color="error" variant="subtle" :title="errorMessage" />
+    <UAlert
+      v-else-if="errorMessage && !board"
+      color="error"
+      variant="subtle"
+      :title="errorMessage"
+    />
 
     <template v-else-if="board">
-      <div v-if="allRevealed" class="flex-1 flex flex-col items-center justify-center gap-6 text-center">
+      <div
+        v-if="allRevealed"
+        class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+      >
         <p class="text-2xl sm:text-3xl font-bold text-muted">
           🎉 الفائز 🎉
         </p>
@@ -88,7 +102,10 @@ function closeModal() {
         <p class="text-3xl sm:text-4xl font-bold">
           {{ winningTeam?.score }} نقطة
         </p>
-        <UButton size="xl" to="/">
+        <UButton
+          size="xl"
+          to="/"
+        >
           لعبة جديدة
         </UButton>
       </div>
@@ -139,7 +156,11 @@ function closeModal() {
       </template>
     </template>
 
-    <UModal v-model:open="modalOpen" :dismissible="false" :close="false">
+    <UModal
+      v-model:open="modalOpen"
+      :dismissible="false"
+      :close="false"
+    >
       <template #content>
         <UCard v-if="activeQuestion">
           <template #header>
@@ -160,7 +181,10 @@ function closeModal() {
           </p>
 
           <template #footer>
-            <div v-if="!revealedAnswer" class="flex flex-wrap gap-2 justify-center">
+            <div
+              v-if="!revealedAnswer"
+              class="flex flex-wrap gap-2 justify-center"
+            >
               <UButton
                 v-for="team in board?.teams"
                 :key="team.id"
@@ -180,7 +204,12 @@ function closeModal() {
                 لا أحد أجاب
               </UButton>
             </div>
-            <UButton v-else block size="lg" @click="closeModal">
+            <UButton
+              v-else
+              block
+              size="lg"
+              @click="closeModal"
+            >
               متابعة
             </UButton>
           </template>
