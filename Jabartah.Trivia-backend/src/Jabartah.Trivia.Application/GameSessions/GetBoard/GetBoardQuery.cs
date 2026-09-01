@@ -47,7 +47,7 @@ public class GetBoardHandler(IApplicationDbContext db) : IQueryHandler<GetBoardQ
 
         return new BoardDto(
             session.Id,
-            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score)).ToList(),
+            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score, t.DoublePointsAvailable, t.TwoAnswersAvailable)).ToList(),
             columns
         );
     }

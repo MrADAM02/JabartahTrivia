@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Application.RankingGame.CreateRankingGameSession;
 
-public record CreateRankingGameSessionCommand(List<string> TeamNames, List<Guid> CategoryIds) : ICommand<CreateRankingGameSessionResult>;
+public record CreateRankingGameSessionCommand(List<string> TeamNames, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreateRankingGameSessionResult>;
 
 public record CreateRankingGameSessionResult(Guid RankingGameSessionId, List<RankingTeamDto> Teams);
 public record RankingTeamDto(Guid Id, string Name, int Score);
@@ -14,12 +14,13 @@ public class CreateRankingGameSessionHandler(IApplicationDbContext db)
 {
     public async Task<CreateRankingGameSessionResult> Handle(CreateRankingGameSessionCommand command, CancellationToken ct)
     {
-        var required = RankingGameSession.RoundsPerTeam * 2;
-        var available = await db.RankingLists.CountAsync(l => command.CategoryIds.Contains(l.RankingCategoryId), ct);
+        var session = RankingGameSession.Create(command.TeamNames, command.CategoryIds, command.RoundsPerTeam); // throws first on bad input
+
+        var required = session.RoundsPerTeam * 2;
+        var available = await db.RankingLists.CountAsync(l => session.CategoryIds.Contains(l.RankingCategoryId), ct);
         if (available < required)
             throw new InvalidOperationException($"الفئات المختارة لا تحتوي على عدد كافٍ من القوائم (المطلوب {required} على الأقل).");
 
-        var session = RankingGameSession.Create(command.TeamNames, command.CategoryIds);
         session.Start();
 
         db.RankingGameSessions.Add(session); // whole graph fresh -> no MarkAdded needed

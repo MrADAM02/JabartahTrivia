@@ -53,8 +53,10 @@ public class PasswordRound
 // See CLAUDE.md for the QR-reveal UX this pairs with (PasswordRevealToken).
 public class PasswordGameSession
 {
-    public const int RoundsPerTeam = 5;
+    public static readonly int[] AllowedRoundsPerTeam = [5, 7, 10];
     public const int PointsPerWord = 1;
+
+    public int RoundsPerTeam { get; private set; }
 
     public Guid Id { get; private set; }
     public PasswordGameSessionStatus Status { get; private set; }
@@ -74,7 +76,7 @@ public class PasswordGameSession
 
     private PasswordGameSession() { } // EF Core
 
-    public static PasswordGameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds)
+    public static PasswordGameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds, int roundsPerTeam)
     {
         var names = teamNames.ToList();
         var categories = categoryIds.ToList();
@@ -83,11 +85,14 @@ public class PasswordGameSession
             throw new InvalidOperationException("Password requires exactly 2 teams.");
         if (categories.Count == 0)
             throw new InvalidOperationException("A password session needs at least 1 category.");
+        if (!AllowedRoundsPerTeam.Contains(roundsPerTeam))
+            throw new InvalidOperationException($"عدد الجولات لكل فريق يجب أن يكون أحد القيم التالية: {string.Join(", ", AllowedRoundsPerTeam)}.");
 
         var session = new PasswordGameSession
         {
             Id = Guid.NewGuid(),
             Status = PasswordGameSessionStatus.Setup,
+            RoundsPerTeam = roundsPerTeam,
             CreatedAt = DateTime.UtcNow
         };
 

@@ -9,6 +9,12 @@ public enum GameSessionStatus
     Completed = 2
 }
 
+public enum PowerUpType
+{
+    DoublePoints = 0,
+    TwoAnswers = 1
+}
+
 // Tracks which questions have been played in this session, and who won them.
 public class GameQuestionState
 {
@@ -17,19 +23,48 @@ public class GameQuestionState
     public Guid QuestionId { get; private set; }
     public Guid? WonByTeamId { get; private set; }
     public DateTime RevealedAt { get; private set; }
+    public Guid? PowerUpTeamId { get; private set; }
+    public PowerUpType? ActivePowerUp { get; private set; }
+    public bool AttemptFailed { get; private set; }
+    public bool IsResolved { get; private set; }
 
     private GameQuestionState() { } // EF Core
 
-    public static GameQuestionState Create(Guid gameSessionId, Guid questionId) =>
+    public static GameQuestionState Create(Guid gameSessionId, Guid questionId, Guid? powerUpTeamId, PowerUpType? activePowerUp) =>
         new()
         {
             Id = Guid.NewGuid(),
             GameSessionId = gameSessionId,
             QuestionId = questionId,
-            RevealedAt = DateTime.UtcNow
+            RevealedAt = DateTime.UtcNow,
+            PowerUpTeamId = powerUpTeamId,
+            ActivePowerUp = activePowerUp
         };
 
-    public void AwardTo(Guid? teamId) => WonByTeamId = teamId;
+    // Returns true if a retry is now allowed (question stays unresolved).
+    public bool RecordAttempt(Guid? winningTeamId)
+    {
+        if (IsResolved)
+            throw new InvalidOperationException("This question was already resolved.");
+
+        if (winningTeamId is not null)
+        {
+            WonByTeamId = winningTeamId;
+            IsResolved = true;
+            return false;
+        }
+
+        if (ActivePowerUp == PowerUpType.TwoAnswers && !AttemptFailed)
+        {
+            AttemptFailed = true;
+            return true;
+        }
+
+        IsResolved = true;
+        return false;
+    }
+
+    public bool AwardsDoublePoints(Guid teamId) => ActivePowerUp == PowerUpType.DoublePoints && PowerUpTeamId == teamId;
 }
 
 // Aggregate root: owns Teams and QuestionStates for consistency (e.g. can't award
@@ -59,8 +94,8 @@ public class GameSession
 
         if (names.Count < 2)
             throw new InvalidOperationException("A game session needs at least 2 teams.");
-        if (categories.Count == 0)
-            throw new InvalidOperationException("A game session needs at least 1 category.");
+        if (categories.Count != 6)
+            throw new InvalidOperationException("A trivia session needs exactly 6 categories.");
 
         var session = new GameSession
         {
@@ -83,31 +118,44 @@ public class GameSession
         Status = GameSessionStatus.InProgress;
     }
 
-    public GameQuestionState RevealQuestion(Guid questionId)
+    public GameQuestionState RevealQuestion(Guid questionId, Guid? activatingTeamId = null, PowerUpType? powerUp = null)
     {
         if (Status != GameSessionStatus.InProgress)
             throw new InvalidOperationException("Session is not in progress.");
         if (_questionStates.Any(q => q.QuestionId == questionId))
             throw new InvalidOperationException("This question was already used in this session.");
+        if ((activatingTeamId is null) != (powerUp is null))
+            throw new InvalidOperationException("A power-up requires an activating team, and vice versa.");
 
-        var state = GameQuestionState.Create(Id, questionId);
+        if (powerUp is not null)
+        {
+            var team = _teams.FirstOrDefault(t => t.Id == activatingTeamId)
+                ?? throw new InvalidOperationException("Team does not belong to this session.");
+            if (powerUp == PowerUpType.DoublePoints) team.UseDoublePoints();
+            else team.UseTwoAnswers();
+        }
+
+        var state = GameQuestionState.Create(Id, questionId, activatingTeamId, powerUp);
         _questionStates.Add(state);
         return state;
     }
 
-    public void AwardPoints(Guid questionId, Guid? winningTeamId, int points)
+    // Returns the retry team id if a retry is now pending, else null (question fully resolved).
+    public Guid? AwardPoints(Guid questionId, Guid? winningTeamId, int points)
     {
         var state = _questionStates.FirstOrDefault(q => q.QuestionId == questionId)
             ?? throw new InvalidOperationException("Question was not revealed in this session yet.");
 
-        state.AwardTo(winningTeamId);
+        var canRetry = state.RecordAttempt(winningTeamId);
 
         if (winningTeamId is { } teamId)
         {
             var team = _teams.FirstOrDefault(t => t.Id == teamId)
                 ?? throw new InvalidOperationException("Team does not belong to this session.");
-            team.AddPoints(points);
+            team.AddPoints(state.AwardsDoublePoints(teamId) ? points * 2 : points);
         }
+
+        return canRetry ? state.PowerUpTeamId : null;
     }
 
     public void Complete()

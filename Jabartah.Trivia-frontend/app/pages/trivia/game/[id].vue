@@ -14,6 +14,16 @@ const modalOpen = ref(false)
 const activeQuestion = ref<{ questionId: string, pointValue: number, prompt: string } | null>(null)
 const revealedAnswer = ref<string | null>(null)
 const awarding = ref(false)
+const armedPowerUp = ref<{ teamId: string, type: 'DoublePoints' | 'TwoAnswers' } | null>(null)
+const retryNote = ref<string | null>(null)
+
+function togglePowerUp(teamId: string, type: 'DoublePoints' | 'TwoAnswers') {
+  if (armedPowerUp.value?.teamId === teamId && armedPowerUp.value.type === type) {
+    armedPowerUp.value = null
+  } else {
+    armedPowerUp.value = { teamId, type }
+  }
+}
 
 async function loadBoard() {
   try {
@@ -31,16 +41,20 @@ const allRevealed = computed(() =>
   !!board.value && board.value.categories.every(c => c.cells.every(cell => cell.isRevealed))
 )
 
-const winningTeam = computed(() => {
-  if (!board.value || board.value.teams.length === 0) return null
-  return [...board.value.teams].sort((a, b) => b.score - a.score)[0]
-})
+const winnerResult = computed(() => board.value ? getWinner(board.value.teams) : null)
 
 async function openQuestion(questionId: string, pointValue: number) {
   try {
-    const result = await selectQuestion(gameSessionId, questionId)
+    const result = await selectQuestion(
+      gameSessionId,
+      questionId,
+      armedPowerUp.value?.teamId ?? null,
+      armedPowerUp.value?.type ?? null
+    )
+    armedPowerUp.value = null
     activeQuestion.value = { questionId, pointValue, prompt: result.prompt }
     revealedAnswer.value = null
+    retryNote.value = null
     modalOpen.value = true
   } catch {
     errorMessage.value = 'تعذر فتح السؤال.'
@@ -52,7 +66,11 @@ async function award(teamId: string | null) {
   awarding.value = true
   try {
     const result = await awardPoints(gameSessionId, activeQuestion.value.questionId, teamId)
-    revealedAnswer.value = result.correctAnswer
+    if (result.canRetry) {
+      retryNote.value = `لم يُحسب الجواب — محاولة أخيرة لفريق ${result.retryTeamName}`
+    } else {
+      revealedAnswer.value = result.correctAnswer
+    }
     if (board.value) board.value.teams = result.teams
     await loadBoard()
   } catch {
@@ -66,6 +84,7 @@ function closeModal() {
   modalOpen.value = false
   activeQuestion.value = null
   revealedAnswer.value = null
+  retryNote.value = null
 }
 </script>
 
@@ -93,15 +112,28 @@ function closeModal() {
         v-if="allRevealed"
         class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
       >
-        <p class="text-2xl sm:text-3xl font-bold text-muted">
-          🎉 الفائز 🎉
-        </p>
-        <h1 class="text-5xl sm:text-7xl font-black text-primary">
-          {{ winningTeam?.name }}
-        </h1>
-        <p class="text-3xl sm:text-4xl font-bold">
-          {{ winningTeam?.score }} نقطة
-        </p>
+        <template v-if="winnerResult?.isDraw">
+          <p class="text-2xl sm:text-3xl font-bold text-muted">
+            🤝 تعادل
+          </p>
+          <h1 class="text-4xl sm:text-6xl font-black text-primary">
+            {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+          </h1>
+          <p class="text-3xl sm:text-4xl font-bold">
+            {{ winnerResult.topScore }} نقطة
+          </p>
+        </template>
+        <template v-else>
+          <p class="text-2xl sm:text-3xl font-bold text-muted">
+            🎉 الفائز 🎉
+          </p>
+          <h1 class="text-5xl sm:text-7xl font-black text-primary">
+            {{ winnerResult?.winners[0]?.name }}
+          </h1>
+          <p class="text-3xl sm:text-4xl font-bold">
+            {{ winnerResult?.winners[0]?.score }} نقطة
+          </p>
+        </template>
         <UButton
           size="xl"
           to="/"
@@ -123,6 +155,28 @@ function closeModal() {
             <p class="text-3xl sm:text-4xl font-black text-primary">
               {{ team.score }}
             </p>
+            <div class="flex gap-1 justify-center mt-2">
+              <UButton
+                :color="armedPowerUp?.teamId === team.id && armedPowerUp.type === 'DoublePoints' ? 'primary' : 'neutral'"
+                :variant="armedPowerUp?.teamId === team.id && armedPowerUp.type === 'DoublePoints' ? 'solid' : 'outline'"
+                :disabled="!team.doublePointsAvailable"
+                size="xs"
+                title="مضاعفة النقاط"
+                @click="togglePowerUp(team.id, 'DoublePoints')"
+              >
+                💰
+              </UButton>
+              <UButton
+                :color="armedPowerUp?.teamId === team.id && armedPowerUp.type === 'TwoAnswers' ? 'primary' : 'neutral'"
+                :variant="armedPowerUp?.teamId === team.id && armedPowerUp.type === 'TwoAnswers' ? 'solid' : 'outline'"
+                :disabled="!team.twoAnswersAvailable"
+                size="xs"
+                title="محاولتين"
+                @click="togglePowerUp(team.id, 'TwoAnswers')"
+              >
+                🔁
+              </UButton>
+            </div>
           </UCard>
         </div>
 
@@ -178,6 +232,13 @@ function closeModal() {
             class="text-xl sm:text-2xl font-bold text-center text-primary bg-primary/10 rounded-lg py-4 mb-4"
           >
             {{ revealedAnswer }}
+          </p>
+
+          <p
+            v-else-if="retryNote"
+            class="text-lg font-bold text-center text-warning bg-warning/10 rounded-lg py-3 mb-4"
+          >
+            {{ retryNote }}
           </p>
 
           <template #footer>

@@ -18,6 +18,7 @@ public class RankingGameSessionConfiguration : IEntityTypeConfiguration<RankingG
 
         builder.Property(s => s.CreatedAt).IsRequired();
         builder.Property(s => s.CompletedAt);
+        builder.Property(s => s.RoundsPerTeam).IsRequired();
 
         builder.HasMany(s => s.Teams)
             .WithOne()

@@ -6,13 +6,14 @@ const { listRankingCategories, createRankingGameSession } = useApi()
 const teamNames = ref(['فريق ١', 'فريق ٢'])
 const categories = ref<RankingCategoryDto[]>([])
 const selectedCategoryIds = ref<string[]>([])
+const roundsPerTeam = ref(2)
+const roundsOptions = [2, 4, 6]
 const loading = ref(false)
 const errorMessage = ref('')
 
 onMounted(async () => {
   try {
     categories.value = await listRankingCategories()
-    selectedCategoryIds.value = categories.value.map(c => c.id)
   } catch {
     errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
   }
@@ -35,7 +36,7 @@ async function startGame() {
   errorMessage.value = ''
   loading.value = true
   try {
-    const result = await createRankingGameSession(teamNames.value, selectedCategoryIds.value)
+    const result = await createRankingGameSession(teamNames.value, selectedCategoryIds.value, roundsPerTeam.value)
     await navigateTo(`/ranking/game/${result.rankingGameSessionId}`)
   } catch {
     errorMessage.value = 'تعذر إنشاء الجلسة. تأكد من اختيار فئات كافية.'
@@ -90,6 +91,24 @@ async function startGame() {
             >
               <span v-if="category.icon">{{ category.icon }}</span>
               {{ category.name }}
+            </UButton>
+          </div>
+        </section>
+
+        <section class="space-y-3">
+          <h2 class="text-lg font-bold">
+            عدد الجولات لكل فريق
+          </h2>
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-for="option in roundsOptions"
+              :key="option"
+              :color="roundsPerTeam === option ? 'primary' : 'neutral'"
+              :variant="roundsPerTeam === option ? 'solid' : 'outline'"
+              size="lg"
+              @click="roundsPerTeam = option"
+            >
+              {{ option }} لكل فريق
             </UButton>
           </div>
         </section>

@@ -88,10 +88,7 @@ async function resolve(correct: boolean) {
   }
 }
 
-const winningTeam = computed(() => {
-  if (!session.value || session.value.teams.length === 0) return null
-  return [...session.value.teams].sort((a, b) => b.score - a.score)[0]
-})
+const winnerResult = computed(() => session.value ? getWinner(session.value.teams) : null)
 </script>
 
 <template>
@@ -118,15 +115,28 @@ const winningTeam = computed(() => {
         v-if="session.status === 'Completed'"
         class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
       >
-        <p class="text-2xl sm:text-3xl font-bold text-muted">
-          🎉 الفائز 🎉
-        </p>
-        <h1 class="text-5xl sm:text-7xl font-black text-primary">
-          {{ winningTeam?.name }}
-        </h1>
-        <p class="text-3xl sm:text-4xl font-bold">
-          {{ winningTeam?.score }} نقطة
-        </p>
+        <template v-if="winnerResult?.isDraw">
+          <p class="text-2xl sm:text-3xl font-bold text-muted">
+            🤝 تعادل
+          </p>
+          <h1 class="text-4xl sm:text-6xl font-black text-primary">
+            {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+          </h1>
+          <p class="text-3xl sm:text-4xl font-bold">
+            {{ winnerResult.topScore }} نقطة
+          </p>
+        </template>
+        <template v-else>
+          <p class="text-2xl sm:text-3xl font-bold text-muted">
+            🎉 الفائز 🎉
+          </p>
+          <h1 class="text-5xl sm:text-7xl font-black text-primary">
+            {{ winnerResult?.winners[0]?.name }}
+          </h1>
+          <p class="text-3xl sm:text-4xl font-bold">
+            {{ winnerResult?.winners[0]?.score }} نقطة
+          </p>
+        </template>
         <UButton
           size="xl"
           to="/"

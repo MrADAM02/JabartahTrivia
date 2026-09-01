@@ -4,6 +4,7 @@ using Jabartah.Trivia.Domain.PasswordGame;
 using Jabartah.Trivia.Domain.Questions;
 using Jabartah.Trivia.Domain.RankingGame;
 using Jabartah.Trivia.Domain.Teams;
+using Jabartah.Trivia.Domain.Top100Game;
 using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Application.Abstractions;
@@ -29,6 +30,12 @@ public interface IApplicationDbContext
     DbSet<RankingListItem> RankingListItems { get; }
     DbSet<RankingGameSession> RankingGameSessions { get; }
     DbSet<RankingTeam> RankingTeams { get; }
+
+    DbSet<Top100Category> Top100Categories { get; }
+    DbSet<Top100List> Top100Lists { get; }
+    DbSet<Top100ListItem> Top100ListItems { get; }
+    DbSet<Top100GameSession> Top100GameSessions { get; }
+    DbSet<Top100Team> Top100Teams { get; }
 
     // EF Core can't tell "new" from "existing" for entities with a client-generated key
     // (e.g. GameQuestionState.Id set via Guid.NewGuid() in the domain) when they're attached

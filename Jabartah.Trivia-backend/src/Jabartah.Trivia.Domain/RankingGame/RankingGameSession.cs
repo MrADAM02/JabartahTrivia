@@ -53,7 +53,9 @@ public class RankingRound
 // Aggregate root: two teams alternate turns arranging shuffled cards into the correct order.
 public class RankingGameSession
 {
-    public const int RoundsPerTeam = 3; // MaxRounds = 6
+    public static readonly int[] AllowedRoundsPerTeam = [2, 4, 6];
+
+    public int RoundsPerTeam { get; private set; }
 
     public Guid Id { get; private set; }
     public RankingGameSessionStatus Status { get; private set; }
@@ -73,7 +75,7 @@ public class RankingGameSession
 
     private RankingGameSession() { } // EF Core
 
-    public static RankingGameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds)
+    public static RankingGameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds, int roundsPerTeam)
     {
         var names = teamNames.ToList();
         var categories = categoryIds.ToList();
@@ -82,11 +84,14 @@ public class RankingGameSession
             throw new InvalidOperationException("Ranking requires exactly 2 teams.");
         if (categories.Count == 0)
             throw new InvalidOperationException("A ranking session needs at least 1 category.");
+        if (!AllowedRoundsPerTeam.Contains(roundsPerTeam))
+            throw new InvalidOperationException($"عدد الجولات لكل فريق يجب أن يكون أحد القيم التالية: {string.Join(", ", AllowedRoundsPerTeam)}.");
 
         var session = new RankingGameSession
         {
             Id = Guid.NewGuid(),
             Status = RankingGameSessionStatus.Setup,
+            RoundsPerTeam = roundsPerTeam,
             CreatedAt = DateTime.UtcNow
         };
 

@@ -2,7 +2,8 @@
 const modes = [
   { to: '/trivia/setup', icon: '🎯', title: 'لعبة الأسئلة', description: 'اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط' },
   { to: '/password/setup', icon: '🤫', title: 'كلمة السر', description: 'لمّح لفريقك بكلمة واحدة ليخمنوا الكلمة السرية' },
-  { to: '/ranking/setup', icon: '🔢', title: 'رتبها', description: 'رتب البطاقات بالترتيب الصحيح قبل الوقت' }
+  { to: '/ranking/setup', icon: '🔢', title: 'رتبها', description: 'رتب البطاقات بالترتيب الصحيح قبل الوقت' },
+  { to: '/top100/setup', icon: '💯', title: 'تحدي الـ100', description: 'خمّنوا عناصر القائمة، والعنصر الأصعب يستحق أكثر' }
 ]
 </script>
 
@@ -18,7 +19,7 @@ const modes = [
         </p>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <NuxtLink
           v-for="mode in modes"
           :key="mode.to"

@@ -5,6 +5,7 @@ using Jabartah.Trivia.Domain.PasswordGame;
 using Jabartah.Trivia.Domain.Questions;
 using Jabartah.Trivia.Domain.RankingGame;
 using Jabartah.Trivia.Domain.Teams;
+using Jabartah.Trivia.Domain.Top100Game;
 using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Infrastructure.Persistence;
@@ -27,6 +28,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RankingListItem> RankingListItems => Set<RankingListItem>();
     public DbSet<RankingGameSession> RankingGameSessions => Set<RankingGameSession>();
     public DbSet<RankingTeam> RankingTeams => Set<RankingTeam>();
+
+    public DbSet<Top100Category> Top100Categories => Set<Top100Category>();
+    public DbSet<Top100List> Top100Lists => Set<Top100List>();
+    public DbSet<Top100ListItem> Top100ListItems => Set<Top100ListItem>();
+    public DbSet<Top100GameSession> Top100GameSessions => Set<Top100GameSession>();
+    public DbSet<Top100Team> Top100Teams => Set<Top100Team>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

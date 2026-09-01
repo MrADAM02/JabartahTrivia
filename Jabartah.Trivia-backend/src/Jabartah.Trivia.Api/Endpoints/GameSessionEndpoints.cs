@@ -19,13 +19,14 @@ public static class GameSessionEndpoints
             Results.Ok(await dispatcher.Send(new GetBoardQuery(id), ct)));
 
         group.MapPost("/{id:guid}/questions/{questionId:guid}/select", async (
-                Guid id, Guid questionId, IDispatcher dispatcher, CancellationToken ct) =>
-            Results.Ok(await dispatcher.Send(new SelectQuestionCommand(id, questionId), ct)));
+                Guid id, Guid questionId, SelectQuestionRequest body, IDispatcher dispatcher, CancellationToken ct) =>
+            Results.Ok(await dispatcher.Send(new SelectQuestionCommand(id, questionId, body.ActivatingTeamId, body.PowerUp), ct)));
 
         group.MapPost("/{id:guid}/questions/{questionId:guid}/award", async (
                 Guid id, Guid questionId, AwardPointsRequest body, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new AwardPointsCommand(id, questionId, body.WinningTeamId), ct)));
     }
 
+    public record SelectQuestionRequest(Guid? ActivatingTeamId, string? PowerUp);
     public record AwardPointsRequest(Guid? WinningTeamId);
 }

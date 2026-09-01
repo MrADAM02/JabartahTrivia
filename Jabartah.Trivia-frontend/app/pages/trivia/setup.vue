@@ -12,7 +12,6 @@ const errorMessage = ref('')
 onMounted(async () => {
   try {
     categories.value = await listCategories()
-    selectedCategoryIds.value = categories.value.map(c => c.id)
   } catch {
     errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
   }
@@ -20,14 +19,18 @@ onMounted(async () => {
 
 function toggleCategory(id: string) {
   const index = selectedCategoryIds.value.indexOf(id)
-  if (index === -1) selectedCategoryIds.value.push(id)
-  else selectedCategoryIds.value.splice(index, 1)
+  if (index !== -1) {
+    selectedCategoryIds.value.splice(index, 1)
+    return
+  }
+  if (selectedCategoryIds.value.length >= 6) return
+  selectedCategoryIds.value.push(id)
 }
 
 const canStart = computed(
   () =>
     teamNames.value.every(name => name.trim().length > 0)
-    && selectedCategoryIds.value.length > 0
+    && selectedCategoryIds.value.length === 6
     && !loading.value
 )
 
@@ -79,9 +82,14 @@ async function startGame() {
         </section>
 
         <section class="space-y-3">
-          <h2 class="text-lg font-bold">
-            اختر الفئات
-          </h2>
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold">
+              اختر الفئات
+            </h2>
+            <p class="text-sm text-muted">
+              {{ selectedCategoryIds.length }} من 6
+            </p>
+          </div>
           <div class="flex flex-wrap gap-2">
             <UButton
               v-for="category in categories"
@@ -94,6 +102,7 @@ async function startGame() {
               :variant="
                 selectedCategoryIds.includes(category.id) ? 'solid' : 'outline'
               "
+              :disabled="selectedCategoryIds.length >= 6 && !selectedCategoryIds.includes(category.id)"
               size="lg"
               @click="toggleCategory(category.id)"
             >

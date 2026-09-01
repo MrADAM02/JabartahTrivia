@@ -48,7 +48,20 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ActivePowerUp")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("AttemptFailed")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("GameSessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("PowerUpTeamId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("QuestionId")
@@ -129,6 +142,9 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RoundsPerTeam")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -327,6 +343,9 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("RoundsPerTeam")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -458,6 +477,9 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("DoublePointsAvailable")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("GameSessionId")
                         .HasColumnType("uuid");
 
@@ -469,11 +491,189 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("TwoAnswersAvailable")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.HasIndex("GameSessionId");
 
                     b.ToTable("Teams", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Top100Categories", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100GameSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<Guid[]>("CategoryIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RoundsPerTeam")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Top100GameSessions", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100List", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid>("Top100CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Top100CategoryId");
+
+                    b.ToTable("Top100Lists", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100ListItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<string[]>("AlternateSpellings")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("Top100ListId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Top100ListId");
+
+                    b.HasIndex("Top100ListId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("Top100ListItems", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100Round", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CurrentTurnTeamId")
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<Guid[]>("GuessedItemIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]");
+
+                    b.Property<int>("GuessesMade")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxGuesses")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("Top100GameSessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Top100ListId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Top100GameSessionId", "RoundNumber")
+                        .IsUnique();
+
+                    b.ToTable("Top100Rounds", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100Team", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("Top100GameSessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TurnOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Top100GameSessionId");
+
+                    b.ToTable("Top100Teams", (string)null);
                 });
 
             modelBuilder.Entity("Jabartah.Trivia.Domain.GameSessions.GameQuestionState", b =>
@@ -530,6 +730,24 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100Round", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Top100Game.Top100GameSession", null)
+                        .WithMany("Rounds")
+                        .HasForeignKey("Top100GameSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100Team", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Top100Game.Top100GameSession", null)
+                        .WithMany("Teams")
+                        .HasForeignKey("Top100GameSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Jabartah.Trivia.Domain.GameSessions.GameSession", b =>
                 {
                     b.Navigation("QuestionStates");
@@ -545,6 +763,13 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Jabartah.Trivia.Domain.RankingGame.RankingGameSession", b =>
+                {
+                    b.Navigation("Rounds");
+
+                    b.Navigation("Teams");
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100GameSession", b =>
                 {
                     b.Navigation("Rounds");
 

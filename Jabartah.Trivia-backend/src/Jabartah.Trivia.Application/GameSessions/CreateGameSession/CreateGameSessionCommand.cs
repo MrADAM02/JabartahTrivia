@@ -9,7 +9,7 @@ public record CreateGameSessionCommand(
 ) : ICommand<CreateGameSessionResult>;
 
 public record CreateGameSessionResult(Guid GameSessionId, List<TeamDto> Teams);
-public record TeamDto(Guid Id, string Name, int Score);
+public record TeamDto(Guid Id, string Name, int Score, bool DoublePointsAvailable, bool TwoAnswersAvailable);
 
 public class CreateGameSessionHandler(IApplicationDbContext db)
     : ICommandHandler<CreateGameSessionCommand, CreateGameSessionResult>
@@ -24,7 +24,7 @@ public class CreateGameSessionHandler(IApplicationDbContext db)
 
         return new CreateGameSessionResult(
             session.Id,
-            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score)).ToList()
+            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score, t.DoublePointsAvailable, t.TwoAnswersAvailable)).ToList()
         );
     }
 }
