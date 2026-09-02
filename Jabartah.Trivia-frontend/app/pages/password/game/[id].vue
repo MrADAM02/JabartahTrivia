@@ -2,6 +2,8 @@
 import QRCode from 'qrcode'
 import type { PasswordSessionDto } from '~/types/api'
 
+definePageMeta({ layout: false })
+
 const ROUND_SECONDS = 60
 
 const route = useRoute()
@@ -92,160 +94,163 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
 </script>
 
 <template>
-  <div class="min-h-screen p-3 sm:p-6 flex flex-col gap-6">
-    <div
-      v-if="loading"
-      class="flex-1 flex items-center justify-center"
-    >
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="animate-spin size-10 text-primary"
-      />
-    </div>
-
-    <UAlert
-      v-else-if="errorMessage && !session"
-      color="error"
-      variant="subtle"
-      :title="errorMessage"
-    />
-
-    <template v-else-if="session">
+  <div class="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+    <GameExitBar />
+    <div class="p-3 sm:p-6 flex flex-col gap-6 flex-1">
       <div
-        v-if="session.status === 'Completed'"
-        class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+        v-if="loading"
+        class="flex-1 flex items-center justify-center"
       >
-        <template v-if="winnerResult?.isDraw">
-          <p class="text-2xl sm:text-3xl font-bold text-muted">
-            🤝 تعادل
-          </p>
-          <h1 class="text-4xl sm:text-6xl font-black text-primary">
-            {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-          </h1>
-          <p class="text-3xl sm:text-4xl font-bold">
-            {{ winnerResult.topScore }} نقطة
-          </p>
-        </template>
-        <template v-else>
-          <p class="text-2xl sm:text-3xl font-bold text-muted">
-            🎉 الفائز 🎉
-          </p>
-          <h1 class="text-5xl sm:text-7xl font-black text-primary">
-            {{ winnerResult?.winners[0]?.name }}
-          </h1>
-          <p class="text-3xl sm:text-4xl font-bold">
-            {{ winnerResult?.winners[0]?.score }} نقطة
-          </p>
-        </template>
-        <UButton
-          size="xl"
-          to="/"
-        >
-          لعبة جديدة
-        </UButton>
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="animate-spin size-10 text-primary"
+        />
       </div>
 
-      <template v-else>
-        <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
-          <UCard
-            v-for="team in session.teams"
-            :key="team.id"
-            class="min-w-40 text-center"
+      <UAlert
+        v-else-if="errorMessage && !session"
+        color="error"
+        variant="subtle"
+        :title="errorMessage"
+      />
+
+      <template v-else-if="session">
+        <div
+          v-if="session.status === 'Completed'"
+          class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+        >
+          <template v-if="winnerResult?.isDraw">
+            <p class="text-2xl sm:text-3xl font-bold text-muted">
+              🤝 تعادل
+            </p>
+            <h1 class="text-4xl sm:text-6xl font-black text-primary">
+              {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+            </h1>
+            <p class="text-3xl sm:text-4xl font-bold">
+              {{ winnerResult.topScore }} نقطة
+            </p>
+          </template>
+          <template v-else>
+            <p class="text-2xl sm:text-3xl font-bold text-muted">
+              🎉 الفائز 🎉
+            </p>
+            <h1 class="text-5xl sm:text-7xl font-black text-primary">
+              {{ winnerResult?.winners[0]?.name }}
+            </h1>
+            <p class="text-3xl sm:text-4xl font-bold">
+              {{ winnerResult?.winners[0]?.score }} نقطة
+            </p>
+          </template>
+          <UButton
+            size="xl"
+            to="/"
           >
-            <p class="font-bold text-lg truncate">
-              {{ team.name }}
-            </p>
-            <p class="text-3xl sm:text-4xl font-black text-primary">
-              {{ team.score }}
-            </p>
-          </UCard>
+            لعبة جديدة
+          </UButton>
         </div>
 
-        <p class="text-center text-muted">
-          الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
-        </p>
-
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="subtle"
-          :title="errorMessage"
-        />
-
-        <div class="flex-1 flex items-center justify-center">
-          <UCard
-            v-if="!session.pendingRound"
-            class="text-center max-w-md w-full"
-          >
-            <p class="text-lg mb-4">
-              اضغط لبدء الجولة التالية
-            </p>
-            <UButton
-              size="xl"
-              :loading="starting"
-              @click="startRound"
+        <template v-else>
+          <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
+            <UCard
+              v-for="team in session.teams"
+              :key="team.id"
+              class="min-w-40 text-center"
             >
-              ابدأ الجولة التالية
-            </UButton>
-          </UCard>
+              <p class="font-bold text-lg truncate">
+                {{ team.name }}
+              </p>
+              <p class="text-3xl sm:text-4xl font-black text-primary">
+                {{ team.score }}
+              </p>
+            </UCard>
+          </div>
 
-          <UCard
-            v-else
-            class="text-center max-w-md w-full"
-          >
-            <p class="text-xl font-bold mb-1">
-              دور فريق: {{ session.pendingRound.teamName }}
-            </p>
-            <p class="text-muted mb-4">
-              يقوم أحد أفراد الفريق بمسح الرمز بجواله ليرى الكلمة السرية بمفرده
-            </p>
+          <p class="text-center text-muted">
+            الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
+          </p>
 
-            <div v-if="!qrDataUrl">
+          <UAlert
+            v-if="errorMessage"
+            color="error"
+            variant="subtle"
+            :title="errorMessage"
+          />
+
+          <div class="flex-1 flex items-center justify-center">
+            <UCard
+              v-if="!session.pendingRound"
+              class="text-center max-w-md w-full"
+            >
+              <p class="text-lg mb-4">
+                اضغط لبدء الجولة التالية
+              </p>
               <UButton
                 size="xl"
-                :loading="revealing"
-                @click="showQr"
+                :loading="starting"
+                @click="startRound"
               >
-                عرض رمز QR
+                ابدأ الجولة التالية
               </UButton>
-            </div>
+            </UCard>
 
-            <div
+            <UCard
               v-else
-              class="space-y-4"
+              class="text-center max-w-md w-full"
             >
-              <img
-                :src="qrDataUrl"
-                alt="QR"
-                class="mx-auto rounded-lg border border-default"
-              >
-              <p
-                v-if="secondsLeft !== null"
-                class="text-2xl font-black text-primary"
-              >
-                {{ secondsLeft }} ثانية
+              <p class="text-xl font-bold mb-1">
+                دور فريق: {{ session.pendingRound.teamName }}
               </p>
-              <div class="flex flex-wrap gap-2 justify-center">
+              <p class="text-muted mb-4">
+                يقوم أحد أفراد الفريق بمسح الرمز بجواله ليرى الكلمة السرية بمفرده
+              </p>
+
+              <div v-if="!qrDataUrl">
                 <UButton
-                  color="success"
-                  :loading="resolving"
-                  @click="resolve(true)"
+                  size="xl"
+                  :loading="revealing"
+                  @click="showQr"
                 >
-                  إجابة صحيحة
-                </UButton>
-                <UButton
-                  color="neutral"
-                  variant="outline"
-                  :loading="resolving"
-                  @click="resolve(false)"
-                >
-                  تخطي
+                  عرض رمز QR
                 </UButton>
               </div>
-            </div>
-          </UCard>
-        </div>
+
+              <div
+                v-else
+                class="space-y-4"
+              >
+                <img
+                  :src="qrDataUrl"
+                  alt="QR"
+                  class="mx-auto rounded-lg border border-default"
+                >
+                <p
+                  v-if="secondsLeft !== null"
+                  class="text-2xl font-black text-primary"
+                >
+                  {{ secondsLeft }} ثانية
+                </p>
+                <div class="flex flex-wrap gap-2 justify-center">
+                  <UButton
+                    color="success"
+                    :loading="resolving"
+                    @click="resolve(true)"
+                  >
+                    إجابة صحيحة
+                  </UButton>
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    :loading="resolving"
+                    @click="resolve(false)"
+                  >
+                    تخطي
+                  </UButton>
+                </div>
+              </div>
+            </UCard>
+          </div>
+        </template>
       </template>
-    </template>
+    </div>
   </div>
 </template>

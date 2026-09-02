@@ -9,7 +9,7 @@ public record CreateTop100GameSessionCommand(List<string> TeamNames, List<Guid> 
 public record CreateTop100GameSessionResult(Guid Top100GameSessionId, List<Top100TeamDto> Teams);
 public record Top100TeamDto(Guid Id, string Name, int Score);
 
-public class CreateTop100GameSessionHandler(IApplicationDbContext db)
+public class CreateTop100GameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreateTop100GameSessionCommand, CreateTop100GameSessionResult>
 {
     public async Task<CreateTop100GameSessionResult> Handle(CreateTop100GameSessionCommand command, CancellationToken ct)
@@ -21,6 +21,7 @@ public class CreateTop100GameSessionHandler(IApplicationDbContext db)
         if (available < required)
             throw new InvalidOperationException($"الفئات المختارة لا تحتوي على عدد كافٍ من القوائم (المطلوب {required} على الأقل).");
 
+        session.AttachOwner(currentUser.UserId); // null for guest play -- endpoint has no auth requirement
         session.Start();
         db.Top100GameSessions.Add(session); // whole graph fresh -> no MarkAdded needed
         await db.SaveChangesAsync(ct);

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import type { CategoryDto } from '~/types/api'
 
-const { listCategories, createGameSession } = useApi()
+const { listCategories, listMyCategories, createGameSession } = useApi()
+const { isLoggedIn } = useAuth()
 
 const teamNames = ref(['فريق ١', 'فريق ٢'])
 const categories = ref<CategoryDto[]>([])
+const myCategories = ref<CategoryDto[]>([])
 const selectedCategoryIds = ref<string[]>([])
+const activeTab = ref<'shared' | 'mine'>('shared')
 const loading = ref(false)
 const errorMessage = ref('')
 
@@ -14,6 +17,13 @@ onMounted(async () => {
     categories.value = await listCategories()
   } catch {
     errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
+  }
+  if (isLoggedIn.value) {
+    try {
+      myCategories.value = await listMyCategories()
+    } catch {
+      // تصنيفاتي is a bonus tab -- a failure here shouldn't block the shared-categories flow
+    }
   }
 })
 
@@ -52,12 +62,10 @@ async function startGame() {
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center p-4 sm:p-8 bg-linear-to-b from-primary-50 to-white dark:from-gray-950 dark:to-gray-900"
-  >
+  <div class="min-h-[70vh] flex items-center justify-center p-4 sm:p-8">
     <UCard class="w-full max-w-2xl">
       <template #header>
-        <h1 class="text-3xl sm:text-4xl font-black text-center text-primary">
+        <h1 class="text-3xl sm:text-4xl font-black text-center text-green-900 dark:text-green-100">
           لعبة الأسئلة
         </h1>
         <p class="text-center text-muted mt-1">
@@ -90,25 +98,46 @@ async function startGame() {
               {{ selectedCategoryIds.length }} من 6
             </p>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              v-for="category in categories"
-              :key="category.id"
-              :color="
-                selectedCategoryIds.includes(category.id)
-                  ? 'primary'
-                  : 'neutral'
-              "
-              :variant="
-                selectedCategoryIds.includes(category.id) ? 'solid' : 'outline'
-              "
-              :disabled="selectedCategoryIds.length >= 6 && !selectedCategoryIds.includes(category.id)"
-              size="lg"
-              @click="toggleCategory(category.id)"
+
+          <div class="flex gap-2 border-b border-green-100 dark:border-gray-800">
+            <button
+              class="px-3 py-2 text-sm font-bold border-b-2 -mb-px"
+              :class="activeTab === 'shared' ? 'border-primary text-primary' : 'border-transparent text-muted'"
+              @click="activeTab = 'shared'"
             >
-              <span v-if="category.icon">{{ category.icon }}</span>
-              {{ category.name }}
-            </UButton>
+              الفئات
+            </button>
+            <button
+              v-if="isLoggedIn"
+              class="px-3 py-2 text-sm font-bold border-b-2 -mb-px"
+              :class="activeTab === 'mine' ? 'border-primary text-primary' : 'border-transparent text-muted'"
+              @click="activeTab = 'mine'"
+            >
+              تصنيفاتي
+            </button>
+          </div>
+
+          <CategoryPickerGrid
+            v-if="activeTab === 'shared'"
+            :categories="categories"
+            :selected-ids="selectedCategoryIds"
+            :max="6"
+            @toggle="toggleCategory"
+          />
+          <div v-else>
+            <CategoryPickerGrid
+              :categories="myCategories"
+              :selected-ids="selectedCategoryIds"
+              :max="6"
+              empty-text="لا توجد تصنيفات بعد — أنشئ تصنيفك الأول من صفحة تصنيفاتي"
+              @toggle="toggleCategory"
+            />
+            <NuxtLink
+              to="/my-categories/create"
+              class="inline-block mt-2 text-sm text-primary font-bold"
+            >
+              + إنشاء تصنيف جديد
+            </NuxtLink>
           </div>
         </section>
 
@@ -122,6 +151,8 @@ async function startGame() {
         <UButton
           block
           size="xl"
+          color="secondary"
+          class="font-bold text-green-950"
           :loading="loading"
           :disabled="!canStart"
           @click="startGame"

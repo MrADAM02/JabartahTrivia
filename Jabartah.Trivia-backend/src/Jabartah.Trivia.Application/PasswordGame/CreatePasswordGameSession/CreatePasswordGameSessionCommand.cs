@@ -9,7 +9,7 @@ public record CreatePasswordGameSessionCommand(List<string> TeamNames, List<Guid
 public record CreatePasswordGameSessionResult(Guid PasswordGameSessionId, List<PasswordTeamDto> Teams);
 public record PasswordTeamDto(Guid Id, string Name, int Score);
 
-public class CreatePasswordGameSessionHandler(IApplicationDbContext db)
+public class CreatePasswordGameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreatePasswordGameSessionCommand, CreatePasswordGameSessionResult>
 {
     public async Task<CreatePasswordGameSessionResult> Handle(CreatePasswordGameSessionCommand command, CancellationToken ct)
@@ -21,6 +21,7 @@ public class CreatePasswordGameSessionHandler(IApplicationDbContext db)
         if (available < required)
             throw new InvalidOperationException($"الفئات المختارة لا تحتوي على عدد كافٍ من الكلمات (المطلوب {required} على الأقل).");
 
+        session.AttachOwner(currentUser.UserId); // null for guest play -- endpoint has no auth requirement
         session.Start();
 
         db.PasswordGameSessions.Add(session); // whole graph fresh -> no MarkAdded needed

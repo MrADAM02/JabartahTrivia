@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ar } from '@nuxt/ui/locale'
 
+useAuth().restore()
+
 useHead({
   htmlAttrs: {
     lang: 'ar',
@@ -22,6 +24,8 @@ useSeoMeta({
 
 <template>
   <UApp :locale="ar">
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </UApp>
 </template>

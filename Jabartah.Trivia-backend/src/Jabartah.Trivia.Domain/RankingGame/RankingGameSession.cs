@@ -59,6 +59,7 @@ public class RankingGameSession
 
     public Guid Id { get; private set; }
     public RankingGameSessionStatus Status { get; private set; }
+    public Guid? UserId { get; private set; }   // owner, if created while logged in; null for guest play
     public DateTime CreatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
 
@@ -108,6 +109,8 @@ public class RankingGameSession
             throw new InvalidOperationException("Only a session in Setup can be started.");
         Status = RankingGameSessionStatus.InProgress;
     }
+
+    public void AttachOwner(Guid? userId) => UserId = userId;
 
     public RankingRound StartNextRound(Guid listId)
     {

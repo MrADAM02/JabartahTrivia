@@ -6,12 +6,15 @@ using Jabartah.Trivia.Domain.Questions;
 using Jabartah.Trivia.Domain.RankingGame;
 using Jabartah.Trivia.Domain.Teams;
 using Jabartah.Trivia.Domain.Top100Game;
+using Jabartah.Trivia.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Infrastructure.Persistence;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IApplicationDbContext
 {
+    public DbSet<User> Users => Set<User>();
+
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<GameSession> GameSessions => Set<GameSession>();

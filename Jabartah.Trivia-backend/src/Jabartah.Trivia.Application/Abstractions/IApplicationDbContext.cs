@@ -5,6 +5,7 @@ using Jabartah.Trivia.Domain.Questions;
 using Jabartah.Trivia.Domain.RankingGame;
 using Jabartah.Trivia.Domain.Teams;
 using Jabartah.Trivia.Domain.Top100Game;
+using Jabartah.Trivia.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Application.Abstractions;
@@ -14,6 +15,8 @@ namespace Jabartah.Trivia.Application.Abstractions;
 // from taking a hard dependency on the Infrastructure project's DbContext class.
 public interface IApplicationDbContext
 {
+    DbSet<User> Users { get; }
+
     DbSet<Category> Categories { get; }
     DbSet<Question> Questions { get; }
     DbSet<GameSession> GameSessions { get; }

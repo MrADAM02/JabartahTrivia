@@ -1,4 +1,5 @@
 using Jabartah.Trivia.Domain.Top100Game;
+using Jabartah.Trivia.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,6 +20,9 @@ public class Top100GameSessionConfiguration : IEntityTypeConfiguration<Top100Gam
         builder.Property(s => s.RoundsPerTeam).IsRequired();
         builder.Property(s => s.CreatedAt).IsRequired();
         builder.Property(s => s.CompletedAt);
+
+        builder.HasOne<User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(s => s.UserId);
 
         builder.HasMany(s => s.Teams)
             .WithOne()

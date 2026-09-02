@@ -1,12 +1,19 @@
 import type {
+  AccountDto,
+  AuthResult,
   AwardPointsResult,
   BoardDto,
   CategoryDto,
   ConsumeRevealTokenResult,
+  CreateCustomCategoryResult,
   CreateGameSessionResult,
   CreatePasswordGameSessionResult,
   CreateRankingGameSessionResult,
+  CustomQuestionInput,
   IssueRevealTokenResult,
+  MyCategoryDetailDto,
+  MySessionDto,
+  RevealAnswerResult,
   PasswordCategoryDto,
   PasswordSessionDto,
   RankingCategoryDto,
@@ -26,18 +33,54 @@ import type {
 export function useApi() {
   const { public: { apiPort } } = useRuntimeConfig()
   const apiBase = computed(() => `http://${window.location.hostname}:${apiPort}`)
+  const { token } = useAuth()
 
-  const listCategories = () => $fetch<CategoryDto[]>('/api/categories', { baseURL: apiBase.value })
+  const api = $fetch.create({
+    baseURL: apiBase.value,
+    onRequest({ options }) {
+      if (token.value) {
+        options.headers = new Headers(options.headers)
+        options.headers.set('Authorization', `Bearer ${token.value}`)
+      }
+    }
+  })
+
+  // Auth / account
+
+  const register = (name: string, email: string, password: string) =>
+    api<AuthResult>('/api/auth/register', { method: 'POST', body: { name, email, password } })
+
+  const login = (email: string, password: string) =>
+    api<AuthResult>('/api/auth/login', { method: 'POST', body: { email, password } })
+
+  const getAccount = () => api<AccountDto>('/api/account')
+
+  const deleteAccount = () => api('/api/account', { method: 'DELETE' })
+
+  const getMySessions = () => api<MySessionDto[]>('/api/my-sessions')
+
+  // تصنيفاتي (custom Trivia categories)
+
+  const listMyCategories = () => api<CategoryDto[]>('/api/my-categories')
+
+  const createMyCategory = (name: string, icon: string | null, questions: CustomQuestionInput[]) =>
+    api<CreateCustomCategoryResult>('/api/my-categories', { method: 'POST', body: { name, icon, questions } })
+
+  const getMyCategory = (categoryId: string) =>
+    api<MyCategoryDetailDto>(`/api/my-categories/${categoryId}`)
+
+  const deleteMyCategory = (categoryId: string) =>
+    api(`/api/my-categories/${categoryId}`, { method: 'DELETE' })
+
+  // Trivia board
+
+  const listCategories = () => api<CategoryDto[]>('/api/categories')
 
   const createGameSession = (teamNames: string[], categoryIds: string[]) =>
-    $fetch<CreateGameSessionResult>('/api/game-sessions', {
-      baseURL: apiBase.value,
-      method: 'POST',
-      body: { teamNames, categoryIds }
-    })
+    api<CreateGameSessionResult>('/api/game-sessions', { method: 'POST', body: { teamNames, categoryIds } })
 
   const getBoard = (gameSessionId: string) =>
-    $fetch<BoardDto>(`/api/game-sessions/${gameSessionId}/board`, { baseURL: apiBase.value })
+    api<BoardDto>(`/api/game-sessions/${gameSessionId}/board`)
 
   const selectQuestion = (
     gameSessionId: string,
@@ -45,110 +88,111 @@ export function useApi() {
     activatingTeamId: string | null = null,
     powerUp: 'DoublePoints' | 'TwoAnswers' | null = null
   ) =>
-    $fetch<SelectQuestionResult>(
+    api<SelectQuestionResult>(
       `/api/game-sessions/${gameSessionId}/questions/${questionId}/select`,
-      { baseURL: apiBase.value, method: 'POST', body: { activatingTeamId, powerUp } }
+      { method: 'POST', body: { activatingTeamId, powerUp } }
     )
 
   const awardPoints = (gameSessionId: string, questionId: string, winningTeamId: string | null) =>
-    $fetch<AwardPointsResult>(
+    api<AwardPointsResult>(
       `/api/game-sessions/${gameSessionId}/questions/${questionId}/award`,
-      { baseURL: apiBase.value, method: 'POST', body: { winningTeamId } }
+      { method: 'POST', body: { winningTeamId } }
+    )
+
+  const revealAnswer = (gameSessionId: string, questionId: string) =>
+    api<RevealAnswerResult>(
+      `/api/game-sessions/${gameSessionId}/questions/${questionId}/reveal-answer`,
+      { method: 'POST' }
     )
 
   // Password game (كلمة السر)
 
-  const listPasswordCategories = () => $fetch<PasswordCategoryDto[]>('/api/password-categories', { baseURL: apiBase.value })
+  const listPasswordCategories = () => api<PasswordCategoryDto[]>('/api/password-categories')
 
   const createPasswordGameSession = (teamNames: string[], categoryIds: string[], roundsPerTeam: number) =>
-    $fetch<CreatePasswordGameSessionResult>('/api/password-sessions', {
-      baseURL: apiBase.value,
+    api<CreatePasswordGameSessionResult>('/api/password-sessions', {
       method: 'POST',
       body: { teamNames, categoryIds, roundsPerTeam }
     })
 
   const getPasswordSession = (sessionId: string) =>
-    $fetch<PasswordSessionDto>(`/api/password-sessions/${sessionId}`, { baseURL: apiBase.value })
+    api<PasswordSessionDto>(`/api/password-sessions/${sessionId}`)
 
   const startNextPasswordRound = (sessionId: string) =>
-    $fetch<StartNextPasswordRoundResult>(
-      `/api/password-sessions/${sessionId}/rounds/next`,
-      { baseURL: apiBase.value, method: 'POST' }
-    )
+    api<StartNextPasswordRoundResult>(`/api/password-sessions/${sessionId}/rounds/next`, { method: 'POST' })
 
   const issueRevealToken = (sessionId: string, roundId: string) =>
-    $fetch<IssueRevealTokenResult>(
-      `/api/password-sessions/${sessionId}/rounds/${roundId}/reveal-token`,
-      { baseURL: apiBase.value, method: 'POST' }
-    )
+    api<IssueRevealTokenResult>(`/api/password-sessions/${sessionId}/rounds/${roundId}/reveal-token`, { method: 'POST' })
 
   const resolvePasswordRound = (sessionId: string, roundId: string, correct: boolean) =>
-    $fetch<ResolvePasswordRoundResult>(
-      `/api/password-sessions/${sessionId}/rounds/${roundId}/resolve`,
-      { baseURL: apiBase.value, method: 'POST', body: { correct } }
-    )
+    api<ResolvePasswordRoundResult>(`/api/password-sessions/${sessionId}/rounds/${roundId}/resolve`, {
+      method: 'POST',
+      body: { correct }
+    })
 
-  const consumeRevealToken = (token: string) =>
-    $fetch<ConsumeRevealTokenResult>(`/api/reveal/${token}`, { baseURL: apiBase.value, method: 'POST' })
+  const consumeRevealToken = (revealToken: string) =>
+    api<ConsumeRevealTokenResult>(`/api/reveal/${revealToken}`, { method: 'POST' })
 
   // Ranking game (رتبها)
 
-  const listRankingCategories = () => $fetch<RankingCategoryDto[]>('/api/ranking-categories', { baseURL: apiBase.value })
+  const listRankingCategories = () => api<RankingCategoryDto[]>('/api/ranking-categories')
 
   const createRankingGameSession = (teamNames: string[], categoryIds: string[], roundsPerTeam: number) =>
-    $fetch<CreateRankingGameSessionResult>('/api/ranking-sessions', {
-      baseURL: apiBase.value,
+    api<CreateRankingGameSessionResult>('/api/ranking-sessions', {
       method: 'POST',
       body: { teamNames, categoryIds, roundsPerTeam }
     })
 
   const getRankingSession = (sessionId: string) =>
-    $fetch<RankingSessionDto>(`/api/ranking-sessions/${sessionId}`, { baseURL: apiBase.value })
+    api<RankingSessionDto>(`/api/ranking-sessions/${sessionId}`)
 
   const startNextRankingRound = (sessionId: string) =>
-    $fetch<StartNextRankingRoundResult>(
-      `/api/ranking-sessions/${sessionId}/rounds/next`,
-      { baseURL: apiBase.value, method: 'POST' }
-    )
+    api<StartNextRankingRoundResult>(`/api/ranking-sessions/${sessionId}/rounds/next`, { method: 'POST' })
 
   const submitRankingRound = (sessionId: string, roundId: string, orderedItemIds: string[]) =>
-    $fetch<SubmitRankingRoundResult>(
-      `/api/ranking-sessions/${sessionId}/rounds/${roundId}/submit`,
-      { baseURL: apiBase.value, method: 'POST', body: { orderedItemIds } }
-    )
+    api<SubmitRankingRoundResult>(`/api/ranking-sessions/${sessionId}/rounds/${roundId}/submit`, {
+      method: 'POST',
+      body: { orderedItemIds }
+    })
 
   // تحدي الـ100
 
-  const listTop100Categories = () => $fetch<Top100CategoryDto[]>('/api/top100-categories', { baseURL: apiBase.value })
+  const listTop100Categories = () => api<Top100CategoryDto[]>('/api/top100-categories')
 
   const createTop100GameSession = (teamNames: string[], categoryIds: string[], roundsPerTeam: number) =>
-    $fetch<CreateTop100GameSessionResult>('/api/top100-sessions', {
-      baseURL: apiBase.value,
+    api<CreateTop100GameSessionResult>('/api/top100-sessions', {
       method: 'POST',
       body: { teamNames, categoryIds, roundsPerTeam }
     })
 
   const getTop100Session = (sessionId: string) =>
-    $fetch<Top100SessionDto>(`/api/top100-sessions/${sessionId}`, { baseURL: apiBase.value })
+    api<Top100SessionDto>(`/api/top100-sessions/${sessionId}`)
 
   const startNextTop100Round = (sessionId: string) =>
-    $fetch<StartNextTop100RoundResult>(
-      `/api/top100-sessions/${sessionId}/rounds/next`,
-      { baseURL: apiBase.value, method: 'POST' }
-    )
+    api<StartNextTop100RoundResult>(`/api/top100-sessions/${sessionId}/rounds/next`, { method: 'POST' })
 
   const submitGuess = (sessionId: string, roundId: string, guessText: string) =>
-    $fetch<SubmitGuessResult>(
-      `/api/top100-sessions/${sessionId}/rounds/${roundId}/guess`,
-      { baseURL: apiBase.value, method: 'POST', body: { guessText } }
-    )
+    api<SubmitGuessResult>(`/api/top100-sessions/${sessionId}/rounds/${roundId}/guess`, {
+      method: 'POST',
+      body: { guessText }
+    })
 
   return {
+    register,
+    login,
+    getAccount,
+    deleteAccount,
+    getMySessions,
+    listMyCategories,
+    createMyCategory,
+    getMyCategory,
+    deleteMyCategory,
     listCategories,
     createGameSession,
     getBoard,
     selectQuestion,
     awardPoints,
+    revealAnswer,
     listPasswordCategories,
     createPasswordGameSession,
     getPasswordSession,

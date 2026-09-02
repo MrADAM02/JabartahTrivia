@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ layout: false })
+
 const route = useRoute()
 const token = route.params.token as string
 

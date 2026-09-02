@@ -1,4 +1,5 @@
 using Jabartah.Trivia.Domain.GameSessions;
+using Jabartah.Trivia.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,6 +19,11 @@ public class GameSessionConfiguration : IEntityTypeConfiguration<GameSession>
 
         builder.Property(s => s.CreatedAt).IsRequired();
         builder.Property(s => s.CompletedAt);
+
+        // Deleting an account anonymizes ownership of sessions rather than deleting shared
+        // game data other players were part of -- SetNull, not Cascade.
+        builder.HasOne<User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(s => s.UserId);
 
         // GameSession.Teams / .QuestionStates are backed by private List<T> fields
         // (_teams / _questionStates) with only an IReadOnlyCollection<T> exposed publicly.

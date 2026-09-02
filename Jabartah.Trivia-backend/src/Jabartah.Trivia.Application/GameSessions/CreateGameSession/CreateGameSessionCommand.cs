@@ -11,12 +11,13 @@ public record CreateGameSessionCommand(
 public record CreateGameSessionResult(Guid GameSessionId, List<TeamDto> Teams);
 public record TeamDto(Guid Id, string Name, int Score, bool DoublePointsAvailable, bool TwoAnswersAvailable);
 
-public class CreateGameSessionHandler(IApplicationDbContext db)
+public class CreateGameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreateGameSessionCommand, CreateGameSessionResult>
 {
     public async Task<CreateGameSessionResult> Handle(CreateGameSessionCommand command, CancellationToken ct)
     {
         var session = GameSession.Create(command.TeamNames, command.CategoryIds);
+        session.AttachOwner(currentUser.UserId); // null for guest play -- endpoint has no auth requirement
         session.Start(); // MVP: no separate "waiting room" step, start immediately
 
         db.GameSessions.Add(session);

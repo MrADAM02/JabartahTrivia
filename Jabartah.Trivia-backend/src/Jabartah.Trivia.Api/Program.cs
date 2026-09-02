@@ -1,16 +1,42 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using Jabartah.Trivia.Api.Endpoints;
+using Jabartah.Trivia.Api.Security;
 using Jabartah.Trivia.Application;
+using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Infrastructure;
 using Jabartah.Trivia.Infrastructure.Persistence;
 using Jabartah.Trivia.Infrastructure.Persistence.Seed;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
+
+var jwtSection = builder.Configuration.GetSection("Jwt");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSection["Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -80,6 +106,9 @@ app.Use(async (context, next) =>
 });
 
 app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapGameSessionEndpoints();
 app.MapCategoryEndpoints();
 app.MapPasswordGameEndpoints();
@@ -89,5 +118,8 @@ app.MapRankingGameEndpoints();
 app.MapRankingCategoryEndpoints();
 app.MapTop100GameEndpoints();
 app.MapTop100CategoryEndpoints();
+app.MapAuthEndpoints();
+app.MapSessionEndpoints();
+app.MapMyCategoryEndpoints();
 
 app.Run();

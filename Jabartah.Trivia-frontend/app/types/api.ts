@@ -1,7 +1,63 @@
+// Auth / account
+
+export interface AuthResult {
+  token: string
+  userId: string
+  name: string
+  email: string
+}
+
+export interface AccountDto {
+  name: string
+  email: string
+  gamesPlayedCount: number
+}
+
+export interface MyTeamDto {
+  name: string
+  score: number
+}
+
+export interface MySessionDto {
+  id: string
+  mode: string
+  createdAt: string
+  completedAt: string | null
+  teams: MyTeamDto[]
+  winnerTeamNames: string[]
+  isDraw: boolean
+}
+
 export interface CategoryDto {
   id: string
   name: string
   icon: string | null
+}
+
+// تصنيفاتي (custom Trivia categories)
+
+export interface CustomQuestionInput {
+  pointValue: number
+  prompt: string
+  answer: string
+}
+
+export interface CreateCustomCategoryResult {
+  categoryId: string
+}
+
+export interface MyCategoryQuestionDto {
+  id: string
+  pointValue: number
+  prompt: string
+  answer: string
+}
+
+export interface MyCategoryDetailDto {
+  id: string
+  name: string
+  icon: string | null
+  questions: MyCategoryQuestionDto[]
 }
 
 export interface TeamDto {
@@ -42,6 +98,10 @@ export interface SelectQuestionResult {
   pointValue: number
   prompt: string
   mediaUrl: string | null
+}
+
+export interface RevealAnswerResult {
+  answer: string
 }
 
 export interface AwardPointsResult {

@@ -2,6 +2,7 @@ using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Application.GameSessions.AwardPoints;
 using Jabartah.Trivia.Application.GameSessions.CreateGameSession;
 using Jabartah.Trivia.Application.GameSessions.GetBoard;
+using Jabartah.Trivia.Application.GameSessions.RevealAnswer;
 using Jabartah.Trivia.Application.GameSessions.SelectQuestion;
 
 namespace Jabartah.Trivia.Api.Endpoints;
@@ -25,6 +26,10 @@ public static class GameSessionEndpoints
         group.MapPost("/{id:guid}/questions/{questionId:guid}/award", async (
                 Guid id, Guid questionId, AwardPointsRequest body, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new AwardPointsCommand(id, questionId, body.WinningTeamId), ct)));
+
+        group.MapPost("/{id:guid}/questions/{questionId:guid}/reveal-answer", async (
+                Guid id, Guid questionId, IDispatcher dispatcher, CancellationToken ct) =>
+            Results.Ok(await dispatcher.Send(new RevealAnswerCommand(id, questionId), ct)));
     }
 
     public record SelectQuestionRequest(Guid? ActivatingTeamId, string? PowerUp);

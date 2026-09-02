@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RankingItemOptionDto, RankingSessionDto, SubmitRankingRoundResult } from '~/types/api'
 
+definePageMeta({ layout: false })
+
 const route = useRoute()
 const sessionId = route.params.id as string
 
@@ -92,217 +94,232 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
 </script>
 
 <template>
-  <div class="min-h-screen p-3 sm:p-6 flex flex-col gap-6">
-    <div
-      v-if="loading"
-      class="flex-1 flex items-center justify-center"
-    >
-      <UIcon
-        name="i-lucide-loader-circle"
-        class="animate-spin size-10 text-primary"
-      />
-    </div>
-
-    <UAlert
-      v-else-if="errorMessage && !session"
-      color="error"
-      variant="subtle"
-      :title="errorMessage"
-    />
-
-    <template v-else-if="session">
+  <div class="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
+    <GameExitBar />
+    <div class="p-3 sm:p-6 flex flex-col gap-6 flex-1">
       <div
-        v-if="session.status === 'Completed'"
-        class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+        v-if="loading"
+        class="flex-1 flex items-center justify-center"
       >
-        <template v-if="winnerResult?.isDraw">
-          <p class="text-2xl sm:text-3xl font-bold text-muted">
-            🤝 تعادل
-          </p>
-          <h1 class="text-4xl sm:text-6xl font-black text-primary">
-            {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-          </h1>
-          <p class="text-3xl sm:text-4xl font-bold">
-            {{ winnerResult.topScore }} نقطة
-          </p>
-        </template>
-        <template v-else>
-          <p class="text-2xl sm:text-3xl font-bold text-muted">
-            🎉 الفائز 🎉
-          </p>
-          <h1 class="text-5xl sm:text-7xl font-black text-primary">
-            {{ winnerResult?.winners[0]?.name }}
-          </h1>
-          <p class="text-3xl sm:text-4xl font-bold">
-            {{ winnerResult?.winners[0]?.score }} نقطة
-          </p>
-        </template>
-        <UButton
-          size="xl"
-          to="/"
-        >
-          لعبة جديدة
-        </UButton>
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="animate-spin size-10 text-primary"
+        />
       </div>
 
-      <template v-else>
-        <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
-          <UCard
-            v-for="team in session.teams"
-            :key="team.id"
-            class="min-w-40 text-center"
+      <UAlert
+        v-else-if="errorMessage && !session"
+        color="error"
+        variant="subtle"
+        :title="errorMessage"
+      />
+
+      <template v-else-if="session">
+        <div
+          v-if="session.status === 'Completed'"
+          class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+        >
+          <template v-if="winnerResult?.isDraw">
+            <p class="text-2xl sm:text-3xl font-bold text-muted">
+              🤝 تعادل
+            </p>
+            <h1 class="text-4xl sm:text-6xl font-black text-primary">
+              {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+            </h1>
+            <p class="text-3xl sm:text-4xl font-bold">
+              {{ winnerResult.topScore }} نقطة
+            </p>
+          </template>
+          <template v-else>
+            <p class="text-2xl sm:text-3xl font-bold text-muted">
+              🎉 الفائز 🎉
+            </p>
+            <h1 class="text-5xl sm:text-7xl font-black text-primary">
+              {{ winnerResult?.winners[0]?.name }}
+            </h1>
+            <p class="text-3xl sm:text-4xl font-bold">
+              {{ winnerResult?.winners[0]?.score }} نقطة
+            </p>
+          </template>
+          <UButton
+            size="xl"
+            to="/"
           >
-            <p class="font-bold text-lg truncate">
-              {{ team.name }}
-            </p>
-            <p class="text-3xl sm:text-4xl font-black text-primary">
-              {{ team.score }}
-            </p>
-          </UCard>
+            لعبة جديدة
+          </UButton>
         </div>
 
-        <p class="text-center text-muted">
-          الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
-        </p>
-
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="subtle"
-          :title="errorMessage"
-        />
-
-        <div class="flex-1 flex items-center justify-center">
-          <UCard
-            v-if="!currentRound"
-            class="text-center max-w-md w-full"
-          >
-            <p class="text-lg mb-4">
-              اضغط لبدء الجولة التالية
-            </p>
-            <UButton
-              size="xl"
-              :loading="starting"
-              @click="startRound"
+        <template v-else>
+          <div class="flex flex-wrap justify-center gap-3 sm:gap-6">
+            <UCard
+              v-for="team in session.teams"
+              :key="team.id"
+              class="min-w-40 text-center"
             >
-              ابدأ الجولة التالية
-            </UButton>
-          </UCard>
-
-          <UCard
-            v-else-if="!roundResult"
-            class="max-w-xl w-full"
-          >
-            <template #header>
-              <p class="text-center font-bold text-lg">
-                {{ currentRound.teamName }}
+              <p class="font-bold text-lg truncate">
+                {{ team.name }}
               </p>
-              <p class="text-center text-muted">
-                {{ currentRound.listTitle }}
+              <p class="text-3xl sm:text-4xl font-black text-primary">
+                {{ team.score }}
               </p>
-            </template>
+            </UCard>
+          </div>
 
-            <div class="space-y-4">
-              <div>
-                <p class="text-sm font-bold text-muted mb-2">
-                  البطاقات
+          <p class="text-center text-muted">
+            الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
+          </p>
+
+          <UAlert
+            v-if="errorMessage"
+            color="error"
+            variant="subtle"
+            :title="errorMessage"
+          />
+
+          <div class="flex-1 flex items-center justify-center">
+            <UCard
+              v-if="!currentRound"
+              class="text-center max-w-md w-full"
+            >
+              <p class="text-lg mb-4">
+                اضغط لبدء الجولة التالية
+              </p>
+              <UButton
+                size="xl"
+                :loading="starting"
+                @click="startRound"
+              >
+                ابدأ الجولة التالية
+              </UButton>
+            </UCard>
+
+            <UCard
+              v-else-if="!roundResult"
+              class="max-w-xl w-full"
+            >
+              <template #header>
+                <p class="text-center font-bold text-lg">
+                  {{ currentRound.teamName }}
                 </p>
-                <div class="flex flex-wrap gap-2">
-                  <UButton
-                    v-for="item in pool"
-                    :key="item.id"
-                    color="neutral"
-                    variant="outline"
-                    size="lg"
-                    @click="tapItem(item)"
-                  >
-                    {{ item.label }}
-                  </UButton>
+                <p class="text-center text-muted">
+                  {{ currentRound.listTitle }}
+                </p>
+              </template>
+
+              <div class="space-y-4">
+                <div>
+                  <p class="text-sm font-bold text-muted mb-2">
+                    البطاقات
+                  </p>
+                  <div class="flex flex-wrap gap-2">
+                    <UButton
+                      v-for="item in pool"
+                      :key="item.id"
+                      color="neutral"
+                      variant="outline"
+                      size="lg"
+                      @click="tapItem(item)"
+                    >
+                      {{ item.label }}
+                    </UButton>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="text-sm font-bold text-muted mb-2">
+                    ترتيبك
+                  </p>
+                  <ol class="space-y-1">
+                    <li
+                      v-for="(item, index) in placed"
+                      :key="item.id"
+                      class="flex items-center gap-2 bg-primary/10 rounded-lg px-3 py-2 font-bold"
+                    >
+                      <span class="text-primary">{{ index + 1 }}</span>
+                      <span>{{ item.label }}</span>
+                    </li>
+                    <li
+                      v-if="placed.length === 0"
+                      class="text-muted text-sm px-1"
+                    >
+                      اضغط على البطاقات أعلاه بالترتيب الصحيح
+                    </li>
+                  </ol>
                 </div>
               </div>
 
-              <div>
-                <p class="text-sm font-bold text-muted mb-2">
-                  ترتيبك
-                </p>
-                <ol class="space-y-1">
-                  <li
-                    v-for="(item, index) in placed"
-                    :key="item.id"
-                    class="flex items-center gap-2 bg-primary/10 rounded-lg px-3 py-2 font-bold"
+              <template #footer>
+                <div class="flex gap-2 justify-center">
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    :disabled="placed.length === 0"
+                    @click="undoLast"
                   >
-                    <span class="text-primary">{{ index + 1 }}</span>
-                    <span>{{ item.label }}</span>
-                  </li>
-                  <li
-                    v-if="placed.length === 0"
-                    class="text-muted text-sm px-1"
+                    تراجع
+                  </UButton>
+                  <UButton
+                    color="neutral"
+                    variant="ghost"
+                    :disabled="placed.length === 0"
+                    @click="resetOrder"
                   >
-                    اضغط على البطاقات أعلاه بالترتيب الصحيح
-                  </li>
-                </ol>
-              </div>
-            </div>
+                    إعادة
+                  </UButton>
+                  <UButton
+                    :loading="submitting"
+                    :disabled="pool.length > 0"
+                    @click="submitOrder"
+                  >
+                    إرسال الترتيب
+                  </UButton>
+                </div>
+              </template>
+            </UCard>
 
-            <template #footer>
-              <div class="flex gap-2 justify-center">
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  :disabled="placed.length === 0"
-                  @click="undoLast"
-                >
-                  تراجع
-                </UButton>
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  :disabled="placed.length === 0"
-                  @click="resetOrder"
-                >
-                  إعادة
-                </UButton>
-                <UButton
-                  :loading="submitting"
-                  :disabled="pool.length > 0"
-                  @click="submitOrder"
-                >
-                  إرسال الترتيب
-                </UButton>
-              </div>
-            </template>
-          </UCard>
-
-          <UCard
-            v-else
-            class="max-w-xl w-full text-center"
-          >
-            <p class="text-3xl font-black text-primary mb-2">
-              +{{ roundResult.pointsAwarded }} نقطة
-            </p>
-            <p class="text-sm font-bold text-muted mb-2">
-              الترتيب الصحيح
-            </p>
-            <ol class="space-y-1 mb-4">
-              <li
-                v-for="(item, index) in roundResult.correctOrder"
-                :key="item.id"
-                class="flex items-center gap-2 bg-primary/10 rounded-lg px-3 py-2 font-bold"
-              >
-                <span class="text-primary">{{ index + 1 }}</span>
-                <span>{{ item.label }}</span>
-              </li>
-            </ol>
-            <UButton
-              size="xl"
-              block
-              @click="nextRound"
+            <UCard
+              v-else
+              class="max-w-xl w-full text-center"
             >
-              التالي
-            </UButton>
-          </UCard>
-        </div>
+              <p class="text-3xl font-black text-primary mb-2">
+                +{{ roundResult.pointsAwarded }} نقطة
+              </p>
+              <p class="text-sm font-bold text-muted mb-2">
+                ملخص الإجابات
+              </p>
+              <ol class="space-y-1 mb-4">
+                <li
+                  v-for="(item, index) in roundResult.correctOrder"
+                  :key="item.id"
+                  class="flex items-center gap-2 rounded-lg px-3 py-2 font-bold"
+                  :class="placed[index]?.id === item.id ? 'bg-primary/10' : 'bg-error/10'"
+                >
+                  <span :class="placed[index]?.id === item.id ? 'text-primary' : 'text-error'">
+                    {{ index + 1 }}
+                  </span>
+                  <span>{{ placed[index]?.id === item.id ? '✅' : '❌' }}</span>
+                  <span class="flex-1 text-start">
+                    {{ placed[index]?.label ?? '—' }}
+                    <span
+                      v-if="placed[index]?.id !== item.id"
+                      class="block text-xs font-normal text-muted"
+                    >
+                      الصحيح: {{ item.label }}
+                    </span>
+                  </span>
+                </li>
+              </ol>
+              <UButton
+                size="xl"
+                block
+                @click="nextRound"
+              >
+                التالي
+              </UButton>
+            </UCard>
+          </div>
+        </template>
       </template>
-    </template>
+    </div>
   </div>
 </template>

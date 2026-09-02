@@ -37,7 +37,12 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
 
                     b.ToTable("Categories", (string)null);
                 });
@@ -102,7 +107,12 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("GameSessions", (string)null);
                 });
@@ -151,7 +161,12 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("PasswordGameSessions", (string)null);
                 });
@@ -351,7 +366,12 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("RankingGameSessions", (string)null);
                 });
@@ -545,7 +565,12 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Top100GameSessions", (string)null);
                 });
@@ -676,6 +701,45 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                     b.ToTable("Top100Teams", (string)null);
                 });
 
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Users.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Categories.Category", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("Jabartah.Trivia.Domain.GameSessions.GameQuestionState", b =>
                 {
                     b.HasOne("Jabartah.Trivia.Domain.GameSessions.GameSession", null)
@@ -683,6 +747,22 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasForeignKey("GameSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.GameSessions.GameSession", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.PasswordGame.PasswordGameSession", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Jabartah.Trivia.Domain.PasswordGame.PasswordRound", b =>
@@ -701,6 +781,14 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasForeignKey("PasswordGameSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.RankingGame.RankingGameSession", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Jabartah.Trivia.Domain.RankingGame.RankingRound", b =>
@@ -728,6 +816,14 @@ namespace Jabartah.Trivia.Infrastructure.Migrations
                         .HasForeignKey("GameSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100GameSession", b =>
+                {
+                    b.HasOne("Jabartah.Trivia.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Jabartah.Trivia.Domain.Top100Game.Top100Round", b =>

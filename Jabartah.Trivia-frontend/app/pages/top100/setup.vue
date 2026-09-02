@@ -47,12 +47,10 @@ async function startGame() {
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center p-4 sm:p-8 bg-linear-to-b from-primary-50 to-white dark:from-gray-950 dark:to-gray-900"
-  >
+  <div class="min-h-[70vh] flex items-center justify-center p-4 sm:p-8">
     <UCard class="w-full max-w-2xl">
       <template #header>
-        <h1 class="text-3xl sm:text-4xl font-black text-center text-primary">
+        <h1 class="text-3xl sm:text-4xl font-black text-center text-green-900 dark:text-green-100">
           تحدي الـ100
         </h1>
         <p class="text-center text-muted mt-1">
@@ -123,6 +121,8 @@ async function startGame() {
         <UButton
           block
           size="xl"
+          color="secondary"
+          class="font-bold text-green-950"
           :loading="loading"
           :disabled="!canStart"
           @click="startGame"
