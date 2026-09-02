@@ -134,7 +134,10 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
             <p class="text-2xl sm:text-3xl font-bold text-muted">
               🎉 الفائز 🎉
             </p>
-            <h1 class="text-5xl sm:text-7xl font-black text-primary">
+            <h1
+              class="text-5xl sm:text-7xl font-black text-primary"
+              :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
+            >
               {{ winnerResult?.winners[0]?.name }}
             </h1>
             <p class="text-3xl sm:text-4xl font-bold">
@@ -156,10 +159,25 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
               :key="team.id"
               class="min-w-40 text-center"
             >
-              <p class="font-bold text-lg truncate">
-                {{ team.name }}
-              </p>
-              <p class="text-3xl sm:text-4xl font-black text-primary">
+              <div class="flex items-center justify-center gap-2">
+                <span
+                  v-if="team.icon"
+                  class="size-6 rounded-full flex items-center justify-center shrink-0"
+                  :style="{ backgroundColor: team.color ?? '#123A24' }"
+                >
+                  <UIcon
+                    :name="team.icon"
+                    class="size-3.5 text-white"
+                  />
+                </span>
+                <p class="font-bold text-lg truncate">
+                  {{ team.name }}
+                </p>
+              </div>
+              <p
+                class="text-3xl sm:text-4xl font-black text-primary"
+                :style="{ color: team.color ?? undefined }"
+              >
                 {{ team.score }}
               </p>
             </UCard>

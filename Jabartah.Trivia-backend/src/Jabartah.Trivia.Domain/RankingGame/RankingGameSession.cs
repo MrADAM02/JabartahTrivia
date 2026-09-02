@@ -76,12 +76,12 @@ public class RankingGameSession
 
     private RankingGameSession() { } // EF Core
 
-    public static RankingGameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds, int roundsPerTeam)
+    public static RankingGameSession Create(IEnumerable<(string Name, string? Color, string? Icon)> teams, IEnumerable<Guid> categoryIds, int roundsPerTeam)
     {
-        var names = teamNames.ToList();
+        var teamsList = teams.ToList();
         var categories = categoryIds.ToList();
 
-        if (names.Count != 2)
+        if (teamsList.Count != 2)
             throw new InvalidOperationException("Ranking requires exactly 2 teams.");
         if (categories.Count == 0)
             throw new InvalidOperationException("A ranking session needs at least 1 category.");
@@ -96,8 +96,8 @@ public class RankingGameSession
             CreatedAt = DateTime.UtcNow
         };
 
-        for (var i = 0; i < names.Count; i++)
-            session._teams.Add(RankingTeam.Create(session.Id, names[i], i));
+        for (var i = 0; i < teamsList.Count; i++)
+            session._teams.Add(RankingTeam.Create(session.Id, teamsList[i].Name, i, teamsList[i].Color, teamsList[i].Icon));
 
         session._categoryIds.AddRange(categories);
         return session;

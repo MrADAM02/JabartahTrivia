@@ -20,19 +20,21 @@ const emit = defineEmits<{ toggle: [id: string] }>()
   </div>
   <div
     v-else
-    class="flex flex-wrap gap-2"
+    class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
   >
-    <UButton
+    <button
       v-for="category in props.categories"
       :key="category.id"
-      :color="props.selectedIds.includes(category.id) ? 'primary' : 'neutral'"
-      :variant="props.selectedIds.includes(category.id) ? 'solid' : 'outline'"
+      type="button"
+      class="flex flex-col items-center gap-1 rounded-xl p-3 ring-1 transition-all"
+      :class="props.selectedIds.includes(category.id)
+        ? 'ring-2 ring-primary bg-primary/10'
+        : 'ring-green-100 dark:ring-gray-800 hover:ring-primary/50'"
       :disabled="props.selectedIds.length >= props.max && !props.selectedIds.includes(category.id)"
-      size="lg"
       @click="emit('toggle', category.id)"
     >
-      <span v-if="category.icon">{{ category.icon }}</span>
-      {{ category.name }}
-    </UButton>
+      <span class="text-3xl">{{ category.icon ?? '📚' }}</span>
+      <span class="text-xs font-bold text-center line-clamp-2">{{ category.name }}</span>
+    </button>
   </div>
 </template>

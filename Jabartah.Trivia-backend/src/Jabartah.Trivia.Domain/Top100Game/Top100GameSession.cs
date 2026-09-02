@@ -13,12 +13,40 @@ public enum Top100RoundStatus
     Completed = 1
 }
 
-// Tracks one played round: which list, whose turn it is, and which items have been claimed.
+// One guess attempt, correct or not. Kept forever (not just successful ones) so the
+// session can show each team's full chronological history -- both the discovered-items
+// list and the shared "mistakes pile" are just filtered views over this log.
+public class Top100Guess
+{
+    public Guid Id { get; private set; }
+    public Guid Top100RoundId { get; private set; }
+    public int SequenceNumber { get; private set; }   // 1-based order guessed, across both teams
+    public Guid TeamId { get; private set; }
+    public string GuessText { get; private set; } = default!;
+    public Guid? MatchedItemId { get; private set; }   // null = wrong guess
+
+    private Top100Guess() { } // EF Core
+
+    public static Top100Guess Create(Guid roundId, int sequenceNumber, Guid teamId, string guessText, Guid? matchedItemId) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Top100RoundId = roundId,
+            SequenceNumber = sequenceNumber,
+            TeamId = teamId,
+            GuessText = guessText,
+            MatchedItemId = matchedItemId
+        };
+}
+
+// Tracks the single round played per session: which list, whose turn it is, and the full
+// guess log. MaxGuesses is a session-level setting (GuessesPerTeam * 2) -- deliberately
+// decoupled from how many items the list actually has, since a session now plays exactly
+// one (potentially large) list rather than several small ones.
 public class Top100Round
 {
     public Guid Id { get; private set; }
     public Guid Top100GameSessionId { get; private set; }
-    public int RoundNumber { get; private set; }
     public Guid Top100ListId { get; private set; }
     public Top100RoundStatus Status { get; private set; }
     public Guid CurrentTurnTeamId { get; private set; }
@@ -27,60 +55,58 @@ public class Top100Round
     public DateTime CreatedAt { get; private set; }
     public DateTime? ResolvedAt { get; private set; }
 
-    private readonly List<Guid> _guessedItemIds = new();
-    public IReadOnlyCollection<Guid> GuessedItemIds => _guessedItemIds.AsReadOnly();
+    private readonly List<Top100Guess> _guesses = new();
+    public IReadOnlyCollection<Top100Guess> Guesses => _guesses.AsReadOnly();
 
     private Top100Round() { } // EF Core
 
-    public static Top100Round Create(Guid sessionId, int roundNumber, Guid listId, Guid firstTurnTeamId, int itemCount) =>
+    public static Top100Round Create(Guid sessionId, Guid listId, Guid firstTurnTeamId, int maxGuesses) =>
         new()
         {
             Id = Guid.NewGuid(),
             Top100GameSessionId = sessionId,
-            RoundNumber = roundNumber,
             Top100ListId = listId,
             Status = Top100RoundStatus.Pending,
             CurrentTurnTeamId = firstTurnTeamId,
-            MaxGuesses = itemCount * 2,
+            MaxGuesses = maxGuesses,
             CreatedAt = DateTime.UtcNow
         };
 
-    public (Guid? MatchedItemId, bool RoundComplete) RecordGuess(Guid? matchedItemId, Guid otherTeamId, int totalItemCount)
+    public (Top100Guess Guess, bool RoundComplete) RecordGuess(Guid guessingTeamId, string guessText, Guid? matchedItemId, Guid otherTeamId, int totalItemCount)
     {
         if (Status != Top100RoundStatus.Pending)
             throw new InvalidOperationException("This round is already complete.");
 
         GuessesMade++;
-
-        if (matchedItemId is { } id)
-        {
-            if (_guessedItemIds.Contains(id))
-                throw new InvalidOperationException("This item was already guessed.");
-            _guessedItemIds.Add(id);
-        }
+        var guess = Top100Guess.Create(Id, GuessesMade, guessingTeamId, guessText, matchedItemId);
+        _guesses.Add(guess);
 
         CurrentTurnTeamId = otherTeamId; // strict alternation, every guess, correct or not
 
-        var complete = _guessedItemIds.Count == totalItemCount || GuessesMade >= MaxGuesses;
+        var claimedCount = _guesses.Count(g => g.MatchedItemId is not null);
+        var complete = claimedCount == totalItemCount || GuessesMade >= MaxGuesses;
         if (complete)
         {
             Status = Top100RoundStatus.Completed;
             ResolvedAt = DateTime.UtcNow;
         }
 
-        return (matchedItemId, complete);
+        return (guess, complete);
     }
 }
 
-// Aggregate root: two teams alternate individual guesses at a themed ranked list;
-// a correct guess scores points equal to the item's list position.
+// Aggregate root: two teams alternate individual guesses at a themed ranked list, each
+// getting GuessesPerTeam attempts; a correct guess scores points equal to the item's list
+// position. Exactly one round is ever played per session -- "rounds" used to mean "how many
+// separate lists to play", but now GuessesPerTeam directly controls how many attempts each
+// team gets against the one list, so there's nothing left for a second round to do.
 public class Top100GameSession
 {
-    public static readonly int[] AllowedRoundsPerTeam = [1, 2, 3];
+    public static readonly int[] AllowedGuessesPerTeam = [3, 4, 5, 6, 7, 8, 9, 10];
 
     public Guid Id { get; private set; }
     public Top100GameSessionStatus Status { get; private set; }
-    public int RoundsPerTeam { get; private set; }
+    public int GuessesPerTeam { get; private set; }
     public Guid? UserId { get; private set; }   // owner, if created while logged in; null for guest play
     public DateTime CreatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
@@ -91,35 +117,33 @@ public class Top100GameSession
     private readonly List<Guid> _categoryIds = new();
     public IReadOnlyCollection<Guid> CategoryIds => _categoryIds.AsReadOnly();
 
-    private readonly List<Top100Round> _rounds = new();
+    private readonly List<Top100Round> _rounds = new(); // 0 or 1 entries, always
     public IReadOnlyCollection<Top100Round> Rounds => _rounds.AsReadOnly();
-
-    public int MaxRounds => RoundsPerTeam * 2;
 
     private Top100GameSession() { } // EF Core
 
-    public static Top100GameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds, int roundsPerTeam)
+    public static Top100GameSession Create(IEnumerable<(string Name, string? Color, string? Icon)> teams, IEnumerable<Guid> categoryIds, int guessesPerTeam)
     {
-        var names = teamNames.ToList();
+        var teamsList = teams.ToList();
         var categories = categoryIds.ToList();
 
-        if (names.Count != 2)
+        if (teamsList.Count != 2)
             throw new InvalidOperationException("تحدي الـ100 يتطلب فريقين بالضبط.");
         if (categories.Count == 0)
             throw new InvalidOperationException("الجلسة تحتاج فئة واحدة على الأقل.");
-        if (!AllowedRoundsPerTeam.Contains(roundsPerTeam))
-            throw new InvalidOperationException($"عدد الجولات لكل فريق يجب أن يكون أحد القيم التالية: {string.Join(", ", AllowedRoundsPerTeam)}.");
+        if (!AllowedGuessesPerTeam.Contains(guessesPerTeam))
+            throw new InvalidOperationException($"عدد الإجابات لكل فريق يجب أن يكون بين {AllowedGuessesPerTeam.Min()} و {AllowedGuessesPerTeam.Max()}.");
 
         var session = new Top100GameSession
         {
             Id = Guid.NewGuid(),
             Status = Top100GameSessionStatus.Setup,
-            RoundsPerTeam = roundsPerTeam,
+            GuessesPerTeam = guessesPerTeam,
             CreatedAt = DateTime.UtcNow
         };
 
-        for (var i = 0; i < names.Count; i++)
-            session._teams.Add(Top100Team.Create(session.Id, names[i], i));
+        for (var i = 0; i < teamsList.Count; i++)
+            session._teams.Add(Top100Team.Create(session.Id, teamsList[i].Name, i, teamsList[i].Color, teamsList[i].Icon));
 
         session._categoryIds.AddRange(categories);
         return session;
@@ -134,44 +158,40 @@ public class Top100GameSession
 
     public void AttachOwner(Guid? userId) => UserId = userId;
 
-    public Top100Round StartNextRound(Guid listId, int itemCount)
+    public Top100Round StartRound(Guid listId)
     {
         if (Status != Top100GameSessionStatus.InProgress)
             throw new InvalidOperationException("Session is not in progress.");
-        if (_rounds.Count >= MaxRounds)
-            throw new InvalidOperationException("All rounds have already been played.");
-        if (_rounds.Any(r => r.Status == Top100RoundStatus.Pending))
-            throw new InvalidOperationException("Complete the current round before starting the next one.");
+        if (_rounds.Count > 0)
+            throw new InvalidOperationException("This session's round has already started.");
 
-        var roundNumber = _rounds.Count + 1;
-        var turnOrder = (roundNumber - 1) % _teams.Count;
-        var firstTeam = _teams.First(t => t.TurnOrder == turnOrder); // strict alternation, exactly 2 teams
-        var round = Top100Round.Create(Id, roundNumber, listId, firstTeam.Id, itemCount);
+        var firstTeam = _teams.First(t => t.TurnOrder == 0);
+        var round = Top100Round.Create(Id, listId, firstTeam.Id, GuessesPerTeam * 2);
         _rounds.Add(round);
         return round;
     }
 
-    public (Guid GuessingTeamId, Guid? MatchedItemId, int PointsAwarded, bool RoundComplete) SubmitGuess(
-        Guid roundId, Guid? matchedItemId, int pointsIfMatched, int totalItemCount)
+    public (Guid GuessingTeamId, Guid? MatchedItemId, int PointsAwarded, bool SessionComplete) SubmitGuess(
+        Guid roundId, string guessText, Guid? matchedItemId, int pointsIfMatched, int totalItemCount)
     {
         var round = _rounds.FirstOrDefault(r => r.Id == roundId)
             ?? throw new InvalidOperationException("Round does not belong to this session.");
         var guessingTeamId = round.CurrentTurnTeamId; // capture BEFORE RecordGuess flips it
         var otherTeam = _teams.First(t => t.Id != guessingTeamId);
 
-        var (matched, complete) = round.RecordGuess(matchedItemId, otherTeam.Id, totalItemCount);
+        var (guess, complete) = round.RecordGuess(guessingTeamId, guessText, matchedItemId, otherTeam.Id, totalItemCount);
 
         var points = 0;
-        if (matched is not null)
+        if (guess.MatchedItemId is not null)
         {
             points = pointsIfMatched;
             _teams.First(t => t.Id == guessingTeamId).AddPoints(points);
         }
 
-        if (_rounds.Count == MaxRounds && _rounds.All(r => r.Status == Top100RoundStatus.Completed))
-            Complete();
+        if (complete)
+            Complete(); // the session's only round just finished -- the session is done too
 
-        return (guessingTeamId, matched, points, complete);
+        return (guessingTeamId, guess.MatchedItemId, points, complete);
     }
 
     public void Complete()

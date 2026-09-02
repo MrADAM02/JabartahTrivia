@@ -13,6 +13,8 @@ public class PasswordTeamConfiguration : IEntityTypeConfiguration<PasswordTeam>
         builder.Property(t => t.Name).IsRequired().HasMaxLength(100);
         builder.Property(t => t.Score).IsRequired();
         builder.Property(t => t.TurnOrder).IsRequired();
+        builder.Property(t => t.Color).HasMaxLength(20);
+        builder.Property(t => t.Icon).HasMaxLength(50);
         builder.HasIndex(t => t.PasswordGameSessionId);
     }
 }

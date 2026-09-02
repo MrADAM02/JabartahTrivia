@@ -17,7 +17,7 @@ public class Top100GameSessionConfiguration : IEntityTypeConfiguration<Top100Gam
             .HasMaxLength(20)
             .IsRequired();
 
-        builder.Property(s => s.RoundsPerTeam).IsRequired();
+        builder.Property(s => s.GuessesPerTeam).IsRequired();
         builder.Property(s => s.CreatedAt).IsRequired();
         builder.Property(s => s.CompletedAt);
 
@@ -58,8 +58,30 @@ public class Top100RoundConfiguration : IEntityTypeConfiguration<Top100Round>
         builder.Property(r => r.CreatedAt).IsRequired();
         builder.Property(r => r.ResolvedAt);
 
-        builder.PrimitiveCollection(r => r.GuessedItemIds).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.HasMany(r => r.Guesses)
+            .WithOne()
+            .HasForeignKey(g => g.Top100RoundId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(r => r.Guesses).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasIndex(r => new { r.Top100GameSessionId, r.RoundNumber }).IsUnique();
+        // Exactly one round is ever created per session now, so a unique index on the
+        // session FK alone (no RoundNumber anymore) enforces that at the DB level too.
+        builder.HasIndex(r => r.Top100GameSessionId).IsUnique();
+    }
+}
+
+public class Top100GuessConfiguration : IEntityTypeConfiguration<Top100Guess>
+{
+    public void Configure(EntityTypeBuilder<Top100Guess> builder)
+    {
+        builder.ToTable("Top100Guesses");
+        builder.HasKey(g => g.Id);
+
+        builder.Property(g => g.SequenceNumber).IsRequired();
+        builder.Property(g => g.TeamId).IsRequired();
+        builder.Property(g => g.GuessText).IsRequired().HasMaxLength(200);
+        builder.Property(g => g.MatchedItemId);
+
+        builder.HasIndex(g => new { g.Top100RoundId, g.SequenceNumber }).IsUnique();
     }
 }

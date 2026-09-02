@@ -25,6 +25,7 @@ import type {
   StartNextTop100RoundResult,
   SubmitGuessResult,
   SubmitRankingRoundResult,
+  TeamSetupInput,
   Top100CategoryDto,
   Top100SessionDto,
   CreateTop100GameSessionResult
@@ -76,8 +77,8 @@ export function useApi() {
 
   const listCategories = () => api<CategoryDto[]>('/api/categories')
 
-  const createGameSession = (teamNames: string[], categoryIds: string[]) =>
-    api<CreateGameSessionResult>('/api/game-sessions', { method: 'POST', body: { teamNames, categoryIds } })
+  const createGameSession = (teams: TeamSetupInput[], categoryIds: string[]) =>
+    api<CreateGameSessionResult>('/api/game-sessions', { method: 'POST', body: { teams, categoryIds } })
 
   const getBoard = (gameSessionId: string) =>
     api<BoardDto>(`/api/game-sessions/${gameSessionId}/board`)
@@ -109,10 +110,10 @@ export function useApi() {
 
   const listPasswordCategories = () => api<PasswordCategoryDto[]>('/api/password-categories')
 
-  const createPasswordGameSession = (teamNames: string[], categoryIds: string[], roundsPerTeam: number) =>
+  const createPasswordGameSession = (teams: TeamSetupInput[], categoryIds: string[], roundsPerTeam: number) =>
     api<CreatePasswordGameSessionResult>('/api/password-sessions', {
       method: 'POST',
-      body: { teamNames, categoryIds, roundsPerTeam }
+      body: { teams, categoryIds, roundsPerTeam }
     })
 
   const getPasswordSession = (sessionId: string) =>
@@ -137,10 +138,10 @@ export function useApi() {
 
   const listRankingCategories = () => api<RankingCategoryDto[]>('/api/ranking-categories')
 
-  const createRankingGameSession = (teamNames: string[], categoryIds: string[], roundsPerTeam: number) =>
+  const createRankingGameSession = (teams: TeamSetupInput[], categoryIds: string[], roundsPerTeam: number) =>
     api<CreateRankingGameSessionResult>('/api/ranking-sessions', {
       method: 'POST',
-      body: { teamNames, categoryIds, roundsPerTeam }
+      body: { teams, categoryIds, roundsPerTeam }
     })
 
   const getRankingSession = (sessionId: string) =>
@@ -159,10 +160,10 @@ export function useApi() {
 
   const listTop100Categories = () => api<Top100CategoryDto[]>('/api/top100-categories')
 
-  const createTop100GameSession = (teamNames: string[], categoryIds: string[], roundsPerTeam: number) =>
+  const createTop100GameSession = (teams: TeamSetupInput[], categoryIds: string[], guessesPerTeam: number) =>
     api<CreateTop100GameSessionResult>('/api/top100-sessions', {
       method: 'POST',
-      body: { teamNames, categoryIds, roundsPerTeam }
+      body: { teams, categoryIds, guessesPerTeam }
     })
 
   const getTop100Session = (sessionId: string) =>

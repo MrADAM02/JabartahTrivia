@@ -4,17 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Application.RankingGame.CreateRankingGameSession;
 
-public record CreateRankingGameSessionCommand(List<string> TeamNames, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreateRankingGameSessionResult>;
+public record CreateRankingGameSessionCommand(List<TeamSetupInput> Teams, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreateRankingGameSessionResult>;
 
 public record CreateRankingGameSessionResult(Guid RankingGameSessionId, List<RankingTeamDto> Teams);
-public record RankingTeamDto(Guid Id, string Name, int Score);
+public record RankingTeamDto(Guid Id, string Name, int Score, string? Color, string? Icon);
 
 public class CreateRankingGameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreateRankingGameSessionCommand, CreateRankingGameSessionResult>
 {
     public async Task<CreateRankingGameSessionResult> Handle(CreateRankingGameSessionCommand command, CancellationToken ct)
     {
-        var session = RankingGameSession.Create(command.TeamNames, command.CategoryIds, command.RoundsPerTeam); // throws first on bad input
+        var session = RankingGameSession.Create(command.Teams.Select(t => (t.Name, t.Color, t.Icon)), command.CategoryIds, command.RoundsPerTeam); // throws first on bad input
 
         var required = session.RoundsPerTeam * 2;
         var available = await db.RankingLists.CountAsync(l => session.CategoryIds.Contains(l.RankingCategoryId), ct);
@@ -29,7 +29,7 @@ public class CreateRankingGameSessionHandler(IApplicationDbContext db, ICurrentU
 
         return new CreateRankingGameSessionResult(
             session.Id,
-            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score)).ToList()
+            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList()
         );
     }
 }

@@ -38,7 +38,7 @@ public class GetRankingSessionHandler(IApplicationDbContext db) : IQueryHandler<
         return new RankingSessionDto(
             session.Id,
             session.Status.ToString(),
-            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score)).ToList(),
+            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList(),
             session.Rounds.Count(r => r.Status != RankingRoundStatus.Pending),
             session.MaxRounds,
             pendingDto

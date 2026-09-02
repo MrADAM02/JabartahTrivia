@@ -7,51 +7,70 @@ namespace Jabartah.Trivia.Application.Top100Game.GetSession;
 
 public record GetTop100SessionQuery(Guid Top100GameSessionId) : IQuery<Top100SessionDto>;
 
-public record Top100GuessedItemDto(Guid Id, string Label, int Position);
+// One entry per guess attempt, correct or not -- the frontend filters this single log into
+// both the discovered-items list (Matched == true) and the shared mistakes pile (Matched == false).
+public record Top100GuessLogEntryDto(int SequenceNumber, Guid TeamId, string TeamName, string GuessText, bool Matched, string? MatchedLabel, int? MatchedPosition);
 
-// Only ever exposes GUESSED items -- the still-hidden ones must never leak, including on a page reload.
 public record Top100PendingRoundDto(
     Guid RoundId, string ListTitle, int ItemCount, int MaxGuesses, int GuessesMade,
-    Guid CurrentTurnTeamId, string CurrentTurnTeamName, List<Top100GuessedItemDto> GuessedItems);
+    Guid CurrentTurnTeamId, string CurrentTurnTeamName, List<Top100GuessLogEntryDto> Guesses);
+
+public record Top100CompletedRoundSummaryDto(string ListTitle, List<Top100GuessLogEntryDto> Guesses);
 
 public record Top100SessionDto(
-    Guid Id, string Status, int RoundsPerTeam, List<Top100TeamDto> Teams, int RoundsPlayed, int TotalRounds, Top100PendingRoundDto? PendingRound);
+    Guid Id, string Status, int GuessesPerTeam, List<Top100TeamDto> Teams,
+    Top100PendingRoundDto? PendingRound, Top100CompletedRoundSummaryDto? CompletedRound);
 
 public class GetTop100SessionHandler(IApplicationDbContext db) : IQueryHandler<GetTop100SessionQuery, Top100SessionDto>
 {
     public async Task<Top100SessionDto> Handle(GetTop100SessionQuery query, CancellationToken ct)
     {
         var session = await db.Top100GameSessions
-            .Include(s => s.Teams).Include(s => s.Rounds)
+            .Include(s => s.Teams).Include(s => s.Rounds).ThenInclude(r => r.Guesses)
             .FirstOrDefaultAsync(s => s.Id == query.Top100GameSessionId, ct)
             ?? throw new KeyNotFoundException("Top100 game session not found.");
 
-        var pending = session.Rounds.FirstOrDefault(r => r.Status == Top100RoundStatus.Pending);
+        var round = session.Rounds.FirstOrDefault(); // 0 or 1 always, exactly one round per session now
         Top100PendingRoundDto? pendingDto = null;
-        if (pending is not null)
-        {
-            var list = await db.Top100Lists.FirstAsync(l => l.Id == pending.Top100ListId, ct);
-            var guessedItems = await db.Top100ListItems
-                .Where(i => i.Top100ListId == pending.Top100ListId && pending.GuessedItemIds.Contains(i.Id))
-                .OrderBy(i => i.Position)
-                .Select(i => new Top100GuessedItemDto(i.Id, i.Label, i.Position))
-                .ToListAsync(ct);
-            var itemCount = await db.Top100ListItems.CountAsync(i => i.Top100ListId == pending.Top100ListId, ct);
-            var currentTeam = session.Teams.First(t => t.Id == pending.CurrentTurnTeamId);
+        Top100CompletedRoundSummaryDto? completedDto = null;
 
-            pendingDto = new Top100PendingRoundDto(
-                pending.Id, list.Title, itemCount, pending.MaxGuesses, pending.GuessesMade,
-                pending.CurrentTurnTeamId, currentTeam.Name, guessedItems);
+        if (round is not null)
+        {
+            var list = await db.Top100Lists.FirstAsync(l => l.Id == round.Top100ListId, ct);
+            var itemCount = await db.Top100ListItems.CountAsync(i => i.Top100ListId == round.Top100ListId, ct);
+
+            var matchedItemIds = round.Guesses.Where(g => g.MatchedItemId is not null).Select(g => g.MatchedItemId!.Value).ToList();
+            var matchedItemsById = (await db.Top100ListItems.Where(i => matchedItemIds.Contains(i.Id)).ToListAsync(ct)).ToDictionary(i => i.Id);
+
+            var log = round.Guesses
+                .OrderBy(g => g.SequenceNumber)
+                .Select(g =>
+                {
+                    var team = session.Teams.First(t => t.Id == g.TeamId);
+                    var matchedItem = g.MatchedItemId is { } id && matchedItemsById.TryGetValue(id, out var item) ? item : null;
+                    return new Top100GuessLogEntryDto(g.SequenceNumber, g.TeamId, team.Name, g.GuessText, matchedItem is not null, matchedItem?.Label, matchedItem?.Position);
+                })
+                .ToList();
+
+            if (round.Status == Top100RoundStatus.Completed)
+            {
+                completedDto = new Top100CompletedRoundSummaryDto(list.Title, log);
+            }
+            else
+            {
+                var currentTeam = session.Teams.First(t => t.Id == round.CurrentTurnTeamId);
+                pendingDto = new Top100PendingRoundDto(
+                    round.Id, list.Title, itemCount, round.MaxGuesses, round.GuessesMade, round.CurrentTurnTeamId, currentTeam.Name, log);
+            }
         }
 
         return new Top100SessionDto(
             session.Id,
             session.Status.ToString(),
-            session.RoundsPerTeam,
-            session.Teams.Select(t => new Top100TeamDto(t.Id, t.Name, t.Score)).ToList(),
-            session.Rounds.Count(r => r.Status != Top100RoundStatus.Pending),
-            session.MaxRounds,
-            pendingDto
+            session.GuessesPerTeam,
+            session.Teams.Select(t => new Top100TeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList(),
+            pendingDto,
+            completedDto
         );
     }
 }

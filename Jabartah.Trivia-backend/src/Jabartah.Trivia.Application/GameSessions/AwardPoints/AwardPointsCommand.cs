@@ -29,7 +29,7 @@ public class AwardPointsHandler(IApplicationDbContext db)
         var retryTeamName = retryTeamId is { } id ? session.Teams.First(t => t.Id == id).Name : null;
 
         return new AwardPointsResult(
-            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score, t.DoublePointsAvailable, t.TwoAnswersAvailable)).ToList(),
+            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score, t.DoublePointsAvailable, t.TwoAnswersAvailable, t.Color, t.Icon)).ToList(),
             retryTeamId is null ? question.Answer : null, // must NOT leak the answer while a retry is pending
             retryTeamId is not null,
             retryTeamId,

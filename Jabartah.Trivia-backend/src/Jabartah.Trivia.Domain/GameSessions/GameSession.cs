@@ -88,12 +88,12 @@ public class GameSession
 
     private GameSession() { } // EF Core
 
-    public static GameSession Create(IEnumerable<string> teamNames, IEnumerable<Guid> categoryIds)
+    public static GameSession Create(IEnumerable<(string Name, string? Color, string? Icon)> teams, IEnumerable<Guid> categoryIds)
     {
-        var names = teamNames.ToList();
+        var teamsList = teams.ToList();
         var categories = categoryIds.ToList();
 
-        if (names.Count < 2)
+        if (teamsList.Count < 2)
             throw new InvalidOperationException("A game session needs at least 2 teams.");
         if (categories.Count != 6)
             throw new InvalidOperationException("A trivia session needs exactly 6 categories.");
@@ -105,8 +105,8 @@ public class GameSession
             CreatedAt = DateTime.UtcNow
         };
 
-        foreach (var name in names)
-            session._teams.Add(Team.Create(session.Id, name));
+        foreach (var (name, color, icon) in teamsList)
+            session._teams.Add(Team.Create(session.Id, name, color, icon));
 
         session._categoryIds.AddRange(categories);
         return session;

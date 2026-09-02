@@ -4,17 +4,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Application.PasswordGame.CreatePasswordGameSession;
 
-public record CreatePasswordGameSessionCommand(List<string> TeamNames, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreatePasswordGameSessionResult>;
+public record CreatePasswordGameSessionCommand(List<TeamSetupInput> Teams, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreatePasswordGameSessionResult>;
 
 public record CreatePasswordGameSessionResult(Guid PasswordGameSessionId, List<PasswordTeamDto> Teams);
-public record PasswordTeamDto(Guid Id, string Name, int Score);
+public record PasswordTeamDto(Guid Id, string Name, int Score, string? Color, string? Icon);
 
 public class CreatePasswordGameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreatePasswordGameSessionCommand, CreatePasswordGameSessionResult>
 {
     public async Task<CreatePasswordGameSessionResult> Handle(CreatePasswordGameSessionCommand command, CancellationToken ct)
     {
-        var session = PasswordGameSession.Create(command.TeamNames, command.CategoryIds, command.RoundsPerTeam); // throws first on bad input
+        var session = PasswordGameSession.Create(command.Teams.Select(t => (t.Name, t.Color, t.Icon)), command.CategoryIds, command.RoundsPerTeam); // throws first on bad input
 
         var required = session.RoundsPerTeam * 2;
         var available = await db.PasswordWords.CountAsync(w => session.CategoryIds.Contains(w.PasswordCategoryId), ct);
@@ -29,7 +29,7 @@ public class CreatePasswordGameSessionHandler(IApplicationDbContext db, ICurrent
 
         return new CreatePasswordGameSessionResult(
             session.Id,
-            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score)).ToList()
+            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList()
         );
     }
 }

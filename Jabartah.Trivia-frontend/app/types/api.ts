@@ -34,6 +34,14 @@ export interface CategoryDto {
   icon: string | null
 }
 
+// Team setup (name + color + badge, chosen at إعداد اللعبة)
+
+export interface TeamSetupInput {
+  name: string
+  color: string | null
+  icon: string | null
+}
+
 // تصنيفاتي (custom Trivia categories)
 
 export interface CustomQuestionInput {
@@ -66,6 +74,8 @@ export interface TeamDto {
   score: number
   doublePointsAvailable: boolean
   twoAnswersAvailable: boolean
+  color: string | null
+  icon: string | null
 }
 
 export interface BoardCellDto {
@@ -124,6 +134,8 @@ export interface PasswordTeamDto {
   id: string
   name: string
   score: number
+  color: string | null
+  icon: string | null
 }
 
 export interface CreatePasswordGameSessionResult {
@@ -185,6 +197,8 @@ export interface RankingTeamDto {
   id: string
   name: string
   score: number
+  color: string | null
+  icon: string | null
 }
 
 export interface RankingItemOptionDto {
@@ -249,6 +263,8 @@ export interface Top100TeamDto {
   id: string
   name: string
   score: number
+  color: string | null
+  icon: string | null
 }
 
 export interface CreateTop100GameSessionResult {
@@ -256,10 +272,16 @@ export interface CreateTop100GameSessionResult {
   teams: Top100TeamDto[]
 }
 
-export interface Top100GuessedItemDto {
-  id: string
-  label: string
-  position: number
+// One entry per guess attempt, correct or not -- filtered client-side into the
+// discovered-items list (matched) and the shared mistakes pile (not matched).
+export interface Top100GuessLogEntryDto {
+  sequenceNumber: number
+  teamId: string
+  teamName: string
+  guessText: string
+  matched: boolean
+  matchedLabel: string | null
+  matchedPosition: number | null
 }
 
 export interface Top100PendingRoundDto {
@@ -270,35 +292,30 @@ export interface Top100PendingRoundDto {
   guessesMade: number
   currentTurnTeamId: string
   currentTurnTeamName: string
-  guessedItems: Top100GuessedItemDto[]
+  guesses: Top100GuessLogEntryDto[]
+}
+
+export interface Top100CompletedRoundSummaryDto {
+  listTitle: string
+  guesses: Top100GuessLogEntryDto[]
 }
 
 export interface Top100SessionDto {
   id: string
   status: string
-  roundsPerTeam: number
+  guessesPerTeam: number
   teams: Top100TeamDto[]
-  roundsPlayed: number
-  totalRounds: number
   pendingRound: Top100PendingRoundDto | null
+  completedRound: Top100CompletedRoundSummaryDto | null
 }
 
 export interface StartNextTop100RoundResult {
   roundId: string
   currentTurnTeamId: string
   currentTurnTeamName: string
-  roundNumber: number
-  totalRounds: number
   listTitle: string
   itemCount: number
   maxGuesses: number
-}
-
-export interface Top100RevealedItemDto {
-  id: string
-  label: string
-  position: number
-  wasGuessed: boolean
 }
 
 export interface SubmitGuessResult {
@@ -311,8 +328,6 @@ export interface SubmitGuessResult {
   guessingTeamName: string
   nextTurnTeamId: string
   nextTurnTeamName: string
-  roundComplete: boolean
-  fullList: Top100RevealedItemDto[] | null
+  sessionComplete: boolean
   teams: Top100TeamDto[]
-  isSessionComplete: boolean
 }

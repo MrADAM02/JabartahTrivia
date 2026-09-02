@@ -12,16 +12,21 @@ public class RankingTeam
     // iteration order -- it needs this explicit, stable ordinal instead.
     public int TurnOrder { get; private set; }
 
+    public string? Color { get; private set; }   // hex string, e.g. "#EF4444"
+    public string? Icon { get; private set; }    // lucide icon name, e.g. "i-lucide-trophy"
+
     private RankingTeam() { } // EF Core
 
-    public static RankingTeam Create(Guid rankingGameSessionId, string name, int turnOrder) =>
+    public static RankingTeam Create(Guid rankingGameSessionId, string name, int turnOrder, string? color = null, string? icon = null) =>
         new()
         {
             Id = Guid.NewGuid(),
             RankingGameSessionId = rankingGameSessionId,
             Name = name,
             Score = 0,
-            TurnOrder = turnOrder
+            TurnOrder = turnOrder,
+            Color = color,
+            Icon = icon
         };
 
     public void AddPoints(int points) => Score += points;

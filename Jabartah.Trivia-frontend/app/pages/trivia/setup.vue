@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import type { CategoryDto } from '~/types/api'
+import type { CategoryDto, TeamSetupInput } from '~/types/api'
 
 const { listCategories, listMyCategories, createGameSession } = useApi()
 const { isLoggedIn } = useAuth()
 
-const teamNames = ref(['فريق ١', 'فريق ٢'])
+const teams = ref<TeamSetupInput[]>([
+  { name: 'فريق ١', color: null, icon: null },
+  { name: 'فريق ٢', color: null, icon: null }
+])
 const categories = ref<CategoryDto[]>([])
 const myCategories = ref<CategoryDto[]>([])
 const selectedCategoryIds = ref<string[]>([])
 const activeTab = ref<'shared' | 'mine'>('shared')
 const loading = ref(false)
 const errorMessage = ref('')
+
+const steps = [
+  { title: 'اختر 6 فئات', description: 'اختر بالضبط 6 فئات أسئلة تناسب مجلسكم' },
+  { title: 'كوّن فريقك', description: 'سمّ فريقيك واختر لون وأيقونة كل فريق' },
+  { title: 'العب واجمع النقاط', description: 'من يجيب صح أولاً يفوز بنقاط السؤال' }
+]
 
 onMounted(async () => {
   try {
@@ -39,7 +48,7 @@ function toggleCategory(id: string) {
 
 const canStart = computed(
   () =>
-    teamNames.value.every(name => name.trim().length > 0)
+    teams.value.every(t => t.name.trim().length > 0)
     && selectedCategoryIds.value.length === 6
     && !loading.value
 )
@@ -48,10 +57,7 @@ async function startGame() {
   errorMessage.value = ''
   loading.value = true
   try {
-    const result = await createGameSession(
-      teamNames.value,
-      selectedCategoryIds.value
-    )
+    const result = await createGameSession(teams.value, selectedCategoryIds.value)
     await navigateTo(`/trivia/game/${result.gameSessionId}`)
   } catch {
     errorMessage.value = 'تعذر إنشاء الجلسة. حاول مرة أخرى.'
@@ -62,104 +68,113 @@ async function startGame() {
 </script>
 
 <template>
-  <div class="min-h-[70vh] flex items-center justify-center p-4 sm:p-8">
-    <UCard class="w-full max-w-2xl">
-      <template #header>
-        <h1 class="text-3xl sm:text-4xl font-black text-center text-green-900 dark:text-green-100">
-          لعبة الأسئلة
-        </h1>
-        <p class="text-center text-muted mt-1">
-          اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط
-        </p>
-      </template>
+  <div>
+    <section class="bg-green-900 text-white text-center py-10 px-4">
+      <h1 class="text-3xl sm:text-4xl font-black">
+        🎯 لعبة الأسئلة
+      </h1>
+      <p class="text-white/80 mt-1">
+        اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط
+      </p>
+    </section>
 
-      <div class="space-y-8">
-        <section class="space-y-3">
-          <h2 class="text-lg font-bold">
-            الفرق
+    <HowToPlaySteps
+      title="كيف تلعب لعبة الأسئلة؟"
+      :steps="steps"
+    />
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 pb-14 space-y-8">
+      <section class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-green-900 dark:text-green-100">
+            اختر الفئات
           </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <UInput
-              v-for="(_, i) in teamNames"
-              :key="i"
-              v-model="teamNames[i]"
-              size="xl"
-              :placeholder="`اسم الفريق ${i + 1}`"
-            />
-          </div>
-        </section>
+          <p class="text-sm text-muted">
+            {{ selectedCategoryIds.length }} من 6
+          </p>
+        </div>
 
-        <section class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-bold">
-              اختر الفئات
-            </h2>
-            <p class="text-sm text-muted">
-              {{ selectedCategoryIds.length }} من 6
-            </p>
-          </div>
+        <div class="flex gap-2 border-b border-green-100 dark:border-gray-800">
+          <button
+            class="px-3 py-2 text-sm font-bold border-b-2 -mb-px"
+            :class="activeTab === 'shared' ? 'border-primary text-primary' : 'border-transparent text-muted'"
+            @click="activeTab = 'shared'"
+          >
+            الفئات
+          </button>
+          <button
+            v-if="isLoggedIn"
+            class="px-3 py-2 text-sm font-bold border-b-2 -mb-px"
+            :class="activeTab === 'mine' ? 'border-primary text-primary' : 'border-transparent text-muted'"
+            @click="activeTab = 'mine'"
+          >
+            تصنيفاتي
+          </button>
+        </div>
 
-          <div class="flex gap-2 border-b border-green-100 dark:border-gray-800">
-            <button
-              class="px-3 py-2 text-sm font-bold border-b-2 -mb-px"
-              :class="activeTab === 'shared' ? 'border-primary text-primary' : 'border-transparent text-muted'"
-              @click="activeTab = 'shared'"
-            >
-              الفئات
-            </button>
-            <button
-              v-if="isLoggedIn"
-              class="px-3 py-2 text-sm font-bold border-b-2 -mb-px"
-              :class="activeTab === 'mine' ? 'border-primary text-primary' : 'border-transparent text-muted'"
-              @click="activeTab = 'mine'"
-            >
-              تصنيفاتي
-            </button>
-          </div>
-
+        <CategoryPickerGrid
+          v-if="activeTab === 'shared'"
+          :categories="categories"
+          :selected-ids="selectedCategoryIds"
+          :max="6"
+          @toggle="toggleCategory"
+        />
+        <div v-else>
           <CategoryPickerGrid
-            v-if="activeTab === 'shared'"
-            :categories="categories"
+            :categories="myCategories"
             :selected-ids="selectedCategoryIds"
             :max="6"
+            empty-text="لا توجد تصنيفات بعد — أنشئ تصنيفك الأول من صفحة تصنيفاتي"
             @toggle="toggleCategory"
           />
-          <div v-else>
-            <CategoryPickerGrid
-              :categories="myCategories"
-              :selected-ids="selectedCategoryIds"
-              :max="6"
-              empty-text="لا توجد تصنيفات بعد — أنشئ تصنيفك الأول من صفحة تصنيفاتي"
-              @toggle="toggleCategory"
-            />
-            <NuxtLink
-              to="/my-categories/create"
-              class="inline-block mt-2 text-sm text-primary font-bold"
-            >
-              + إنشاء تصنيف جديد
-            </NuxtLink>
-          </div>
-        </section>
+          <NuxtLink
+            to="/my-categories/create"
+            class="inline-block mt-2 text-sm text-primary font-bold"
+          >
+            + إنشاء تصنيف جديد
+          </NuxtLink>
+        </div>
+      </section>
 
-        <UAlert
-          v-if="errorMessage"
-          color="error"
-          variant="subtle"
-          :title="errorMessage"
-        />
+      <UCard>
+        <template #header>
+          <h2 class="text-lg font-bold text-center text-green-900 dark:text-green-100">
+            إعداد اللعبة
+          </h2>
+        </template>
 
-        <UButton
-          block
-          size="xl"
-          color="secondary"
-          class="font-bold text-green-950"
-          :loading="loading"
-          :disabled="!canStart"
-          @click="startGame"
-        >
-          ابدأ اللعبة
-        </UButton>
-      </div>
-    </UCard>
+        <div class="space-y-4">
+          <TeamSetupCard
+            v-model="teams[0]!"
+            label="اسم الفريق الأول"
+            :default-index="0"
+          />
+          <TeamSetupCard
+            v-model="teams[1]!"
+            label="اسم الفريق الثاني"
+            :default-index="1"
+          />
+
+          <UAlert
+            v-if="errorMessage"
+            color="error"
+            variant="subtle"
+            :title="errorMessage"
+          />
+
+          <UButton
+            block
+            size="xl"
+            color="secondary"
+            class="font-bold text-green-950"
+            :loading="loading"
+            :disabled="!canStart"
+            @click="startGame"
+          >
+            ابدأ اللعبة
+          </UButton>
+        </div>
+      </UCard>
+    </div>
   </div>
 </template>
