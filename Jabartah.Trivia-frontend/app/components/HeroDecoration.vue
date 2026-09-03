@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 
-// Purely decorative background layer for a bg-hero-atmosphere section --
-// large blurred glow circles (+ a couple of glyph accents on the big hero
-// only). 'compact' is for the 4 setup pages' thin hero bands: fewer shapes,
-// no float, so a slim band doesn't feel busy.
+// Purely decorative background layer for a bg-hero-atmosphere section.
+// 'large' (index.vue's hero only) gets one very subtle dashed-circle
+// "game route" motif plus a few star/dot accents. 'compact' is for the 4
+// setup pages' thin hero bands: smaller floating glow circles, unchanged.
 const props = withDefaults(defineProps<{
   size?: 'large' | 'compact'
 }>(), {
@@ -19,19 +19,18 @@ const circles = computed(() =>
         { class: 'w-56 h-56 -top-24 -start-12', delay: 0 },
         { class: 'w-44 h-44 -bottom-20 -end-10', delay: 0.4 }
       ]
-    : [
-        { class: 'w-[420px] h-[420px] -top-40 start-[6%]', delay: 0 },
-        { class: 'w-80 h-80 top-1/3 end-[4%]', delay: 0.6 },
-        { class: 'w-64 h-64 -bottom-16 start-1/3', delay: 1.1 }
-      ]
+    : []
 )
 
-const glyphs = computed(() =>
+// Small static-position accents around the route motif -- only these get the
+// gentle float, the big circle itself stays still so it never draws the eye.
+const accents = computed(() =>
   props.size === 'compact'
     ? []
     : [
-        { symbol: '✦', class: 'top-10 start-[18%] text-2xl', delay: 0.2 },
-        { symbol: '✦', class: 'top-16 end-[16%] text-xl', delay: 0.9 }
+        { symbol: '✦', class: 'top-[18%] start-[20%] text-xl', opacity: 0.04, delay: 0 },
+        { symbol: '✦', class: 'top-[22%] end-[18%] text-lg', opacity: 0.045, delay: 0.8 },
+        { symbol: '●', class: 'bottom-[20%] start-[30%] text-xs', opacity: 0.035, delay: 1.4 }
       ]
 )
 
@@ -62,15 +61,35 @@ function floatTransition(delay: number) {
       :animate="floatAnimate"
       :transition="floatTransition(circle.delay)"
     />
-    <motion.span
-      v-for="(glyph, i) in glyphs"
-      :key="`glyph-${i}`"
-      class="absolute text-gold-400/25"
-      :class="glyph.class"
-      :animate="floatAnimate"
-      :transition="floatTransition(glyph.delay)"
+
+    <svg
+      v-if="size === 'large'"
+      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gold-400"
+      style="width: min(65vw, 620px); height: min(65vw, 620px)"
+      viewBox="0 0 200 200"
+      fill="none"
     >
-      {{ glyph.symbol }}
+      <circle
+        cx="100"
+        cy="100"
+        r="94"
+        stroke="currentColor"
+        stroke-width="1"
+        stroke-dasharray="2 9"
+        opacity="0.03"
+      />
+    </svg>
+
+    <motion.span
+      v-for="(accent, i) in accents"
+      :key="`accent-${i}`"
+      class="absolute text-gold-400"
+      :class="accent.class"
+      :style="{ opacity: accent.opacity }"
+      :animate="floatAnimate"
+      :transition="floatTransition(accent.delay)"
+    >
+      {{ accent.symbol }}
     </motion.span>
   </div>
 </template>

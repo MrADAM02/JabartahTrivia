@@ -24,7 +24,7 @@ const steps = [
     <section class="bg-hero-atmosphere text-white relative overflow-hidden">
       <HeroDecoration size="large" />
       <div class="relative max-w-5xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-24 sm:pb-32 text-center space-y-6">
-        <h1 class="text-4xl sm:text-6xl font-black text-gold-400">
+        <h1 class="logo-glow text-4xl sm:text-6xl font-black text-gold-400">
           جولة
         </h1>
         <p class="text-lg sm:text-2xl font-bold text-white/90">

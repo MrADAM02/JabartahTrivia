@@ -133,6 +133,25 @@
     0 0 30px color-mix(in srgb, var(--color-gold-400) 15%, transparent);
 }
 
+/* Soft radial glow centered behind the "جولة" wordmark -- a plain ::before
+   pseudo-element so it paints behind the h1's own text by default box-tree
+   order (no z-index needed), scaled with min(vw, px) to stay proportional
+   without ever overflowing a small screen. */
+.logo-glow {
+  position: relative;
+}
+.logo-glow::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(90vw, 380px);
+  height: min(90vw, 380px);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-gold-400) 7%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
