@@ -72,13 +72,16 @@ async function startGame() {
 
 <template>
   <div>
-    <section class="bg-green-900 text-white text-center py-10 px-4">
-      <h1 class="text-3xl sm:text-4xl font-black">
-        🎯 لعبة الأسئلة
-      </h1>
-      <p class="text-white/80 mt-1">
-        اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط
-      </p>
+    <section class="bg-hero-atmosphere text-white text-center py-10 px-4 relative overflow-hidden">
+      <HeroDecoration size="compact" />
+      <div class="relative">
+        <h1 class="text-3xl sm:text-4xl font-black">
+          🎯 لعبة الأسئلة
+        </h1>
+        <p class="text-white/80 mt-1">
+          اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط
+        </p>
+      </div>
     </section>
 
     <HowToPlaySteps

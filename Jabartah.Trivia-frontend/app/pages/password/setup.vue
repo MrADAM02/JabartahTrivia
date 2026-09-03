@@ -61,13 +61,16 @@ async function startGame() {
 
 <template>
   <div>
-    <section class="bg-green-900 text-white text-center py-10 px-4">
-      <h1 class="text-3xl sm:text-4xl font-black">
-        🤫 كلمة السر
-      </h1>
-      <p class="text-white/80 mt-1">
-        لمّح لفريقك بكلمة واحدة فقط ليخمنوا الكلمة السرية
-      </p>
+    <section class="bg-hero-atmosphere text-white text-center py-10 px-4 relative overflow-hidden">
+      <HeroDecoration size="compact" />
+      <div class="relative">
+        <h1 class="text-3xl sm:text-4xl font-black">
+          🤫 كلمة السر
+        </h1>
+        <p class="text-white/80 mt-1">
+          لمّح لفريقك بكلمة واحدة فقط ليخمنوا الكلمة السرية
+        </p>
+      </div>
     </section>
 
     <HowToPlaySteps

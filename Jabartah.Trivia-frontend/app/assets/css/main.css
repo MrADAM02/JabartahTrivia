@@ -88,6 +88,51 @@
   100% { transform: translate(calc(var(--drift, 0px) * 1.4), 85vh) rotate(calc(var(--spin, 1) * 540deg)); opacity: 0; }
 }
 
+/* Hero atmosphere: a subtle radial gold glow + a barely-visible dot-grid
+   texture layered over the existing dark-green gradient, replacing a flat
+   bg-green-900 fill. All three layers are plain CSS background-image/-size
+   (no image asset, no extra wrapper element) so this is as cheap as a solid
+   fill. Alpha values intentionally stay in the 0.05-0.08 range -- enough to
+   read as texture, not decoration competing with the foreground content. */
+.bg-hero-atmosphere {
+  background-color: var(--color-green-900);
+  background-image:
+    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--color-gold-400) 8%, transparent), transparent 35%),
+    radial-gradient(color-mix(in srgb, var(--color-gold-400) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, var(--color-green-900) 0%, var(--color-green-950) 100%);
+  background-size: 100% 100%, 28px 28px, 100% 100%;
+}
+
+/* Restrained glow for clickable cards (mode picker) -- a soft dark shadow
+   plus a ring that stays readable against the card's own background in
+   either theme (dark green tint on the light-mode white card, light tint on
+   the dark-mode near-black card -- without it, a dark card sitting on the
+   dark hero has no visible edge at all), brightening into a solid gold ring
+   + a wider soft glow on hover. This is plain (unlayered) CSS, which in
+   Tailwind v4 takes precedence over layered utilities regardless of source
+   order -- so both the resting ring and the hover ring color live here
+   directly rather than relying on ring-*/hover:ring-* utilities, which this
+   box-shadow would otherwise silently override. Deliberately not expressed
+   as Tailwind arbitrary-value shadow utilities: multi-layer box-shadow
+   values are unreadable inline at this complexity. */
+.game-card-glow {
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.25),
+    0 0 0 1px color-mix(in srgb, var(--color-green-900) 12%, transparent);
+  transition: box-shadow var(--motion-duration-base) var(--ease-standard);
+}
+:where(.dark) .game-card-glow {
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in srgb, white 14%, transparent);
+}
+.game-card-glow:hover {
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 2px var(--color-gold-500),
+    0 0 30px color-mix(in srgb, var(--color-gold-400) 15%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

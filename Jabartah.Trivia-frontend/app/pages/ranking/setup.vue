@@ -61,13 +61,16 @@ async function startGame() {
 
 <template>
   <div>
-    <section class="bg-green-900 text-white text-center py-10 px-4">
-      <h1 class="text-3xl sm:text-4xl font-black">
-        🔢 رتبها
-      </h1>
-      <p class="text-white/80 mt-1">
-        رتب البطاقات بالترتيب الصحيح قبل الوقت
-      </p>
+    <section class="bg-hero-atmosphere text-white text-center py-10 px-4 relative overflow-hidden">
+      <HeroDecoration size="compact" />
+      <div class="relative">
+        <h1 class="text-3xl sm:text-4xl font-black">
+          🔢 رتبها
+        </h1>
+        <p class="text-white/80 mt-1">
+          رتب البطاقات بالترتيب الصحيح قبل الوقت
+        </p>
+      </div>
     </section>
 
     <HowToPlaySteps

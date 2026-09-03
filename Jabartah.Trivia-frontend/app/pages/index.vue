@@ -21,8 +21,9 @@ const steps = [
 
 <template>
   <div>
-    <section class="bg-green-900 text-white">
-      <div class="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center space-y-6">
+    <section class="bg-hero-atmosphere text-white relative overflow-hidden">
+      <HeroDecoration size="large" />
+      <div class="relative max-w-5xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-24 sm:pb-32 text-center space-y-6">
         <h1 class="text-4xl sm:text-6xl font-black text-gold-400">
           جولة
         </h1>
@@ -35,7 +36,7 @@ const steps = [
       </div>
     </section>
 
-    <section class="max-w-6xl mx-auto px-4 sm:px-6 -mt-10 sm:-mt-14 pb-16">
+    <section class="relative max-w-6xl mx-auto px-4 sm:px-6 -mt-10 sm:-mt-14 pb-16">
       <h2 class="sr-only">
         اختر لعبتك
       </h2>
@@ -47,7 +48,7 @@ const steps = [
           class="block"
         >
           <UCard
-            class="h-full text-center ring-1 ring-green-100 dark:ring-gray-800 hover:ring-2 hover:ring-secondary transition-all cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0"
+            class="game-card-glow h-full text-center transition-all cursor-pointer hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0"
           >
             <div class="text-5xl mb-3">
               {{ mode.icon }}
