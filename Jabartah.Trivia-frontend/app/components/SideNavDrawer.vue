@@ -149,7 +149,7 @@ function logout() {
 <style scoped>
 .drawer-slide-enter-active,
 .drawer-slide-leave-active {
-  transition: transform 0.25s ease;
+  transition: transform var(--motion-duration-base) var(--ease-standard);
 }
 .drawer-slide-enter-from,
 .drawer-slide-leave-to {
@@ -158,7 +158,7 @@ function logout() {
 
 .drawer-fade-enter-active,
 .drawer-fade-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity var(--motion-duration-base) var(--ease-standard);
 }
 .drawer-fade-enter-from,
 .drawer-fade-leave-to {

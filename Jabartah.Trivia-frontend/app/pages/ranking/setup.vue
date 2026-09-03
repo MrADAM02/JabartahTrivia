@@ -13,6 +13,7 @@ const roundsOptions = [2, 4, 6]
 const roundsIndex = ref(0)
 const roundsPerTeam = computed(() => roundsOptions[roundsIndex.value]!)
 const loading = ref(false)
+const categoriesLoading = ref(true)
 const errorMessage = ref('')
 
 const steps = [
@@ -26,6 +27,8 @@ onMounted(async () => {
     categories.value = await listRankingCategories()
   } catch {
     errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
+  } finally {
+    categoriesLoading.value = false
   }
 })
 
@@ -81,6 +84,7 @@ async function startGame() {
           :categories="categories"
           :selected-ids="selectedCategoryIds"
           :max="Infinity"
+          :loading="categoriesLoading"
           @toggle="toggleCategory"
         />
       </section>

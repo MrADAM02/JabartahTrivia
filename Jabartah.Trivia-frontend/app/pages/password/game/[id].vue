@@ -1,15 +1,21 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import QRCode from 'qrcode'
 import type { PasswordSessionDto } from '~/types/api'
+import { DURATIONS, EASINGS, SPRINGS } from '~/utils/motion'
 
 definePageMeta({ layout: false })
 
 const ROUND_SECONDS = 60
+const COUNTDOWN_EMPHASIS_THRESHOLD = 10
 
 const route = useRoute()
 const sessionId = route.params.id as string
 
 const { getPasswordSession, startNextPasswordRound, issueRevealToken, resolvePasswordRound } = useApi()
+const quizMotion = useQuizMotion()
+const { motionTier } = useResponsiveMotion()
+const { pieces: confettiPieces } = useConfettiBurst()
 
 const session = ref<PasswordSessionDto | null>(null)
 const loading = ref(true)
@@ -79,8 +85,15 @@ async function showQr() {
 async function resolve(correct: boolean) {
   if (!session.value?.pendingRound) return
   resolving.value = true
+  const { roundId, teamId } = session.value.pendingRound
   try {
-    await resolvePasswordRound(sessionId, session.value.pendingRound.roundId, correct)
+    await resolvePasswordRound(sessionId, roundId, correct)
+    if (correct) {
+      quizMotion.celebrateCorrect(teamId)
+      quizMotion.recordOutcome(teamId, true)
+    } else {
+      quizMotion.shake('round')
+    }
     resetRoundUi()
     await loadSession()
   } catch {
@@ -91,6 +104,23 @@ async function resolve(correct: boolean) {
 }
 
 const winnerResult = computed(() => session.value ? getWinner(session.value.teams) : null)
+
+const leaderTeamId = computed(() => {
+  if (!session.value || session.value.teams.length !== 2) return null
+  const [a, b] = session.value.teams
+  if (!a || !b || a.score === b.score) return null
+  return a.score > b.score ? a.id : b.id
+})
+
+const progressPercent = computed(() => {
+  if (!session.value || session.value.totalRounds === 0) return 0
+  return Math.round((session.value.roundsPlayed / session.value.totalRounds) * 100)
+})
+
+const showCelebration = ref(false)
+watch(() => session.value?.status, (status) => {
+  if (status === 'Completed' && motionTier.value === 'full') showCelebration.value = true
+})
 </script>
 
 <template>
@@ -117,33 +147,61 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
       <template v-else-if="session">
         <div
           v-if="session.status === 'Completed'"
-          class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+          class="flex-1 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden"
         >
-          <template v-if="winnerResult?.isDraw">
-            <p class="text-2xl sm:text-3xl font-bold text-muted">
-              🤝 تعادل
-            </p>
-            <h1 class="text-4xl sm:text-6xl font-black text-primary">
-              {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-            </h1>
-            <p class="text-3xl sm:text-4xl font-bold">
-              {{ winnerResult.topScore }} نقطة
-            </p>
-          </template>
-          <template v-else>
-            <p class="text-2xl sm:text-3xl font-bold text-muted">
-              🎉 الفائز 🎉
-            </p>
-            <h1
-              class="text-5xl sm:text-7xl font-black text-primary"
-              :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
-            >
-              {{ winnerResult?.winners[0]?.name }}
-            </h1>
-            <p class="text-3xl sm:text-4xl font-bold">
-              {{ winnerResult?.winners[0]?.score }} نقطة
-            </p>
-          </template>
+          <span
+            v-if="showCelebration"
+            class="pointer-events-none absolute inset-0"
+            aria-hidden="true"
+          >
+            <span
+              v-for="piece in confettiPieces"
+              :key="piece.id"
+              class="confetti-piece"
+              :style="{
+                'left': `${piece.left}%`,
+                'width': `${piece.size}px`,
+                'height': `${piece.shape === 'circle' ? piece.size : piece.size * 1.6}px`,
+                'borderRadius': piece.shape === 'circle' ? '50%' : '2px',
+                'backgroundColor': piece.color,
+                'animationDuration': `${piece.duration}s`,
+                'animationDelay': `${piece.delay}s`,
+                '--drift': `${piece.drift}px`,
+                '--spin': piece.spin
+              }"
+            />
+          </span>
+
+          <MotionScale
+            :show="true"
+            :duration="DURATIONS.slow"
+          >
+            <template v-if="winnerResult?.isDraw">
+              <p class="text-2xl sm:text-3xl font-bold text-muted">
+                🤝 تعادل
+              </p>
+              <h1 class="text-4xl sm:text-6xl font-black text-primary">
+                {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+              </h1>
+              <p class="text-3xl sm:text-4xl font-bold">
+                {{ winnerResult.topScore }} نقطة
+              </p>
+            </template>
+            <template v-else>
+              <p class="text-2xl sm:text-3xl font-bold text-muted">
+                🎉 الفائز 🎉
+              </p>
+              <h1
+                class="text-5xl sm:text-7xl font-black text-primary"
+                :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
+              >
+                {{ winnerResult?.winners[0]?.name }}
+              </h1>
+              <p class="text-3xl sm:text-4xl font-bold">
+                {{ winnerResult?.winners[0]?.score }} نقطة
+              </p>
+            </template>
+          </MotionScale>
           <UButton
             size="xl"
             to="/"
@@ -157,8 +215,16 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
             <UCard
               v-for="team in session.teams"
               :key="team.id"
-              class="min-w-40 text-center"
+              class="min-w-40 text-center relative overflow-visible"
             >
+              <motion.div
+                v-if="leaderTeamId === team.id"
+                layout-id="leader-crown"
+                :transition="SPRINGS.gentle"
+                class="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl"
+              >
+                👑
+              </motion.div>
               <div class="flex items-center justify-center gap-2">
                 <span
                   v-if="team.icon"
@@ -174,18 +240,34 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
                   {{ team.name }}
                 </p>
               </div>
-              <p
+              <motion.p
                 class="text-3xl sm:text-4xl font-black text-primary"
                 :style="{ color: team.color ?? undefined }"
+                :animate="{ scale: quizMotion.celebratingTeamId.value === team.id ? [1, 1.15, 1] : 1 }"
+                :transition="{ duration: DURATIONS.slow, ease: EASINGS.standard }"
               >
-                {{ team.score }}
-              </p>
+                <MotionNumber :value="team.score" />
+              </motion.p>
+              <MotionScale
+                :show="quizMotion.streakFor(team.id) >= 2"
+                :duration="DURATIONS.fast"
+              >
+                <span class="text-xs font-bold text-gold-600">🔥×{{ quizMotion.streakFor(team.id) }}</span>
+              </MotionScale>
             </UCard>
           </div>
 
-          <p class="text-center text-muted">
-            الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
-          </p>
+          <div class="max-w-md w-full mx-auto space-y-1">
+            <p class="text-center text-muted">
+              الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
+            </p>
+            <div class="h-1.5 rounded-full bg-primary/10 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-primary transition-[width] duration-(--motion-duration-slow) ease-decelerate"
+                :style="{ width: `${progressPercent}%` }"
+              />
+            </div>
+          </div>
 
           <UAlert
             v-if="errorMessage"
@@ -195,77 +277,91 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
           />
 
           <div class="flex-1 flex items-center justify-center">
-            <UCard
+            <MotionScale
               v-if="!session.pendingRound"
-              class="text-center max-w-md w-full"
+              :show="true"
+              :duration="DURATIONS.base"
             >
-              <p class="text-lg mb-4">
-                اضغط لبدء الجولة التالية
-              </p>
-              <UButton
-                size="xl"
-                :loading="starting"
-                @click="startRound"
-              >
-                ابدأ الجولة التالية
-              </UButton>
-            </UCard>
-
-            <UCard
-              v-else
-              class="text-center max-w-md w-full"
-            >
-              <p class="text-xl font-bold mb-1">
-                دور فريق: {{ session.pendingRound.teamName }}
-              </p>
-              <p class="text-muted mb-4">
-                يقوم أحد أفراد الفريق بمسح الرمز بجواله ليرى الكلمة السرية بمفرده
-              </p>
-
-              <div v-if="!qrDataUrl">
+              <UCard class="text-center max-w-md w-full">
+                <p class="text-lg mb-4">
+                  اضغط لبدء الجولة التالية
+                </p>
                 <UButton
                   size="xl"
-                  :loading="revealing"
-                  @click="showQr"
+                  class="transition-transform active:scale-95"
+                  :loading="starting"
+                  @click="startRound"
                 >
-                  عرض رمز QR
+                  ابدأ الجولة التالية
                 </UButton>
-              </div>
+              </UCard>
+            </MotionScale>
 
-              <div
-                v-else
-                class="space-y-4"
+            <MotionScale
+              v-else
+              :show="true"
+              :duration="DURATIONS.base"
+            >
+              <UCard
+                class="text-center max-w-md w-full"
+                :class="{ 'animate-shake': quizMotion.shakingKey.value === 'round' }"
               >
-                <img
-                  :src="qrDataUrl"
-                  alt="QR"
-                  class="mx-auto rounded-lg border border-default"
-                >
-                <p
-                  v-if="secondsLeft !== null"
-                  class="text-2xl font-black text-primary"
-                >
-                  {{ secondsLeft }} ثانية
+                <p class="text-xl font-bold mb-1">
+                  دور فريق: {{ session.pendingRound.teamName }}
                 </p>
-                <div class="flex flex-wrap gap-2 justify-center">
+                <p class="text-muted mb-4">
+                  يقوم أحد أفراد الفريق بمسح الرمز بجواله ليرى الكلمة السرية بمفرده
+                </p>
+
+                <div v-if="!qrDataUrl">
                   <UButton
-                    color="success"
-                    :loading="resolving"
-                    @click="resolve(true)"
+                    size="xl"
+                    class="transition-transform active:scale-95"
+                    :loading="revealing"
+                    @click="showQr"
                   >
-                    إجابة صحيحة
-                  </UButton>
-                  <UButton
-                    color="neutral"
-                    variant="outline"
-                    :loading="resolving"
-                    @click="resolve(false)"
-                  >
-                    تخطي
+                    عرض رمز QR
                   </UButton>
                 </div>
-              </div>
-            </UCard>
+
+                <div
+                  v-else
+                  class="space-y-4"
+                >
+                  <img
+                    :src="qrDataUrl"
+                    alt="QR"
+                    class="mx-auto rounded-lg border border-default"
+                  >
+                  <p
+                    v-if="secondsLeft !== null"
+                    class="text-2xl font-black transition-colors"
+                    :class="secondsLeft <= COUNTDOWN_EMPHASIS_THRESHOLD ? 'text-error animate-pulse-emphasis' : 'text-primary'"
+                  >
+                    {{ secondsLeft }} ثانية
+                  </p>
+                  <div class="flex flex-wrap gap-2 justify-center">
+                    <UButton
+                      color="success"
+                      class="transition-transform active:scale-95"
+                      :loading="resolving"
+                      @click="resolve(true)"
+                    >
+                      إجابة صحيحة
+                    </UButton>
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      class="transition-transform active:scale-95"
+                      :loading="resolving"
+                      @click="resolve(false)"
+                    >
+                      تخطي
+                    </UButton>
+                  </div>
+                </div>
+              </UCard>
+            </MotionScale>
           </div>
         </template>
       </template>

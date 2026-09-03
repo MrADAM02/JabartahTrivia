@@ -52,9 +52,23 @@ function formatDate(iso: string) {
 
     <div
       v-if="loading"
-      class="text-center text-muted"
+      class="space-y-3"
     >
-      جارِ التحميل...
+      <UCard
+        v-for="i in 4"
+        :key="i"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <USkeleton class="size-9 rounded-full" />
+            <div class="space-y-2">
+              <USkeleton class="h-4 w-24" />
+              <USkeleton class="h-3 w-16" />
+            </div>
+          </div>
+          <USkeleton class="h-4 w-20" />
+        </div>
+      </UCard>
     </div>
 
     <div

@@ -5,6 +5,7 @@ definePageMeta({ middleware: 'auth' })
 useSeoMeta({ title: 'تصنيفاتي - جولة' })
 
 const { listMyCategories, deleteMyCategory } = useApi()
+const toast = useToast()
 
 const categories = ref<CategoryDto[]>([])
 const loading = ref(true)
@@ -29,6 +30,7 @@ async function remove(id: string) {
   try {
     await deleteMyCategory(id)
     categories.value = categories.value.filter(c => c.id !== id)
+    toast.add({ title: 'تم حذف التصنيف', color: 'success' })
   } catch {
     errorMessage.value = 'تعذر حذف التصنيف.'
   } finally {
@@ -67,9 +69,17 @@ async function remove(id: string) {
 
     <div
       v-if="loading"
-      class="text-center text-muted"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-3"
     >
-      جارِ التحميل...
+      <UCard
+        v-for="i in 4"
+        :key="i"
+      >
+        <div class="flex items-center gap-3">
+          <USkeleton class="size-9 rounded-full" />
+          <USkeleton class="h-5 flex-1" />
+        </div>
+      </UCard>
     </div>
 
     <div
@@ -102,6 +112,7 @@ async function remove(id: string) {
       <UCard
         v-for="category in categories"
         :key="category.id"
+        class="hover:ring-1 hover:ring-primary/40 transition-all"
       >
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3">

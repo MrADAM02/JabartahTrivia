@@ -13,6 +13,7 @@ const myCategories = ref<CategoryDto[]>([])
 const selectedCategoryIds = ref<string[]>([])
 const activeTab = ref<'shared' | 'mine'>('shared')
 const loading = ref(false)
+const categoriesLoading = ref(true)
 const errorMessage = ref('')
 
 const steps = [
@@ -26,6 +27,8 @@ onMounted(async () => {
     categories.value = await listCategories()
   } catch {
     errorMessage.value = 'تعذر تحميل الفئات. تأكد من تشغيل الخادم.'
+  } finally {
+    categoriesLoading.value = false
   }
   if (isLoggedIn.value) {
     try {
@@ -117,6 +120,7 @@ async function startGame() {
           :categories="categories"
           :selected-ids="selectedCategoryIds"
           :max="6"
+          :loading="categoriesLoading"
           @toggle="toggleCategory"
         />
         <div v-else>

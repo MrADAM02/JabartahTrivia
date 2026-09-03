@@ -6,6 +6,7 @@ useSeoMeta({ title: 'حسابي - جولة' })
 
 const { getAccount, deleteAccount } = useApi()
 const { clearSession } = useAuth()
+const toast = useToast()
 
 const account = ref<AccountDto | null>(null)
 const loading = ref(true)
@@ -33,6 +34,7 @@ async function confirmDelete() {
   try {
     await deleteAccount()
     clearSession()
+    toast.add({ title: 'تم حذف الحساب', color: 'success' })
     await navigateTo('/')
   } catch {
     errorMessage.value = 'تعذر حذف الحساب. حاول مرة أخرى.'
@@ -116,12 +118,22 @@ async function confirmDelete() {
         </NuxtLink>
       </UCard>
 
-      <div
+      <UCard
         v-else-if="loading"
-        class="text-center text-muted"
+        :ui="{ body: 'divide-y divide-green-100 dark:divide-gray-800 p-0' }"
       >
-        جارِ التحميل...
-      </div>
+        <div
+          v-for="i in 3"
+          :key="i"
+          class="flex items-center justify-between px-4 py-3"
+        >
+          <div class="space-y-2">
+            <USkeleton class="h-3 w-16" />
+            <USkeleton class="h-4 w-32" />
+          </div>
+          <USkeleton class="size-5 rounded-full" />
+        </div>
+      </UCard>
 
       <UButton
         block

@@ -6,6 +6,7 @@ const props = defineProps<{
   selectedIds: string[]
   max: number
   emptyText?: string
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{ toggle: [id: string] }>()
@@ -13,7 +14,20 @@ const emit = defineEmits<{ toggle: [id: string] }>()
 
 <template>
   <div
-    v-if="props.categories.length === 0 && props.emptyText"
+    v-if="props.loading"
+    class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3"
+  >
+    <div
+      v-for="i in 6"
+      :key="i"
+      class="flex flex-col items-center gap-2 rounded-xl p-3 ring-1 ring-green-100 dark:ring-gray-800"
+    >
+      <USkeleton class="size-8 rounded-full" />
+      <USkeleton class="h-3 w-full" />
+    </div>
+  </div>
+  <div
+    v-else-if="props.categories.length === 0 && props.emptyText"
     class="text-sm text-muted py-4 text-center"
   >
     {{ props.emptyText }}

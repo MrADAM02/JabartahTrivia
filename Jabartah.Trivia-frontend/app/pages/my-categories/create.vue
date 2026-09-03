@@ -3,6 +3,7 @@ definePageMeta({ middleware: 'auth' })
 useSeoMeta({ title: 'إنشاء تصنيف جديد - جولة' })
 
 const { createMyCategory } = useApi()
+const toast = useToast()
 
 const POINT_TIERS = [100, 200, 300, 400, 500]
 
@@ -30,6 +31,7 @@ async function submit() {
   loading.value = true
   try {
     await createMyCategory(name.value.trim(), icon.value.trim() || null, questions.value)
+    toast.add({ title: 'تم إنشاء التصنيف', color: 'success' })
     await navigateTo('/my-categories')
   } catch {
     errorMessage.value = 'تعذر إنشاء التصنيف. تأكد من تعبئة جميع الحقول.'

@@ -47,7 +47,7 @@ const steps = [
           class="block"
         >
           <UCard
-            class="h-full text-center ring-1 ring-green-100 dark:ring-gray-800 hover:ring-2 hover:ring-secondary transition-all cursor-pointer shadow-lg"
+            class="h-full text-center ring-1 ring-green-100 dark:ring-gray-800 hover:ring-2 hover:ring-secondary transition-all cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0"
           >
             <div class="text-5xl mb-3">
               {{ mode.icon }}

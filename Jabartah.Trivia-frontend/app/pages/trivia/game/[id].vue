@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import type { BoardDto } from '~/types/api'
+import { DURATIONS, EASINGS, SPRINGS } from '~/utils/motion'
 
 definePageMeta({ layout: false })
 
@@ -7,6 +9,8 @@ const route = useRoute()
 const gameSessionId = route.params.id as string
 
 const { getBoard, selectQuestion, awardPoints, revealAnswer } = useApi()
+const quizMotion = useQuizMotion()
+const { motionTier } = useResponsiveMotion()
 
 const board = ref<BoardDto | null>(null)
 const loading = ref(true)
@@ -46,6 +50,29 @@ const allRevealed = computed(() =>
 )
 
 const winnerResult = computed(() => board.value ? getWinner(board.value.teams) : null)
+
+const leaderTeamId = computed(() => {
+  if (!board.value || board.value.teams.length !== 2) return null
+  const [a, b] = board.value.teams
+  if (!a || !b || a.score === b.score) return null
+  return a.score > b.score ? a.id : b.id
+})
+
+const revealedCount = computed(() =>
+  board.value ? board.value.categories.reduce((sum, c) => sum + c.cells.filter(cell => cell.isRevealed).length, 0) : 0
+)
+const totalCellCount = computed(() =>
+  board.value ? board.value.categories.reduce((sum, c) => sum + c.cells.length, 0) : 0
+)
+const progressPercent = computed(() =>
+  totalCellCount.value === 0 ? 0 : Math.round((revealedCount.value / totalCellCount.value) * 100)
+)
+
+const showCelebration = ref(false)
+const { pieces: confettiPieces } = useConfettiBurst()
+watch(allRevealed, (isDone) => {
+  if (isDone && motionTier.value === 'full') showCelebration.value = true
+})
 
 async function openQuestion(questionId: string, pointValue: number) {
   const blockManualReveal = armedPowerUp.value?.type === 'TwoAnswers'
@@ -87,9 +114,16 @@ async function award(teamId: string | null) {
     const result = await awardPoints(gameSessionId, activeQuestion.value.questionId, teamId)
     if (result.canRetry) {
       retryNote.value = `لم يُحسب الجواب — محاولة أخيرة لفريق ${result.retryTeamName}`
+      quizMotion.shake('question')
     } else {
       shownAnswer.value = result.correctAnswer
       awarded.value = true
+      if (teamId) {
+        quizMotion.celebrateCorrect(teamId)
+        quizMotion.recordOutcome(teamId, true)
+      } else {
+        quizMotion.shake('question')
+      }
     }
     if (board.value) board.value.teams = result.teams
     await loadBoard()
@@ -133,33 +167,61 @@ function closeModal() {
       <template v-else-if="board">
         <div
           v-if="allRevealed"
-          class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+          class="flex-1 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden"
         >
-          <template v-if="winnerResult?.isDraw">
-            <p class="text-2xl sm:text-3xl font-bold text-muted">
-              🤝 تعادل
-            </p>
-            <h1 class="text-4xl sm:text-6xl font-black text-primary">
-              {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-            </h1>
-            <p class="text-3xl sm:text-4xl font-bold">
-              {{ winnerResult.topScore }} نقطة
-            </p>
-          </template>
-          <template v-else>
-            <p class="text-2xl sm:text-3xl font-bold text-muted">
-              🎉 الفائز 🎉
-            </p>
-            <h1
-              class="text-5xl sm:text-7xl font-black text-primary"
-              :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
-            >
-              {{ winnerResult?.winners[0]?.name }}
-            </h1>
-            <p class="text-3xl sm:text-4xl font-bold">
-              {{ winnerResult?.winners[0]?.score }} نقطة
-            </p>
-          </template>
+          <span
+            v-if="showCelebration"
+            class="pointer-events-none absolute inset-0"
+            aria-hidden="true"
+          >
+            <span
+              v-for="piece in confettiPieces"
+              :key="piece.id"
+              class="confetti-piece"
+              :style="{
+                'left': `${piece.left}%`,
+                'width': `${piece.size}px`,
+                'height': `${piece.shape === 'circle' ? piece.size : piece.size * 1.6}px`,
+                'borderRadius': piece.shape === 'circle' ? '50%' : '2px',
+                'backgroundColor': piece.color,
+                'animationDuration': `${piece.duration}s`,
+                'animationDelay': `${piece.delay}s`,
+                '--drift': `${piece.drift}px`,
+                '--spin': piece.spin
+              }"
+            />
+          </span>
+
+          <MotionScale
+            :show="true"
+            :duration="DURATIONS.slow"
+          >
+            <template v-if="winnerResult?.isDraw">
+              <p class="text-2xl sm:text-3xl font-bold text-muted">
+                🤝 تعادل
+              </p>
+              <h1 class="text-4xl sm:text-6xl font-black text-primary">
+                {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+              </h1>
+              <p class="text-3xl sm:text-4xl font-bold">
+                {{ winnerResult.topScore }} نقطة
+              </p>
+            </template>
+            <template v-else>
+              <p class="text-2xl sm:text-3xl font-bold text-muted">
+                🎉 الفائز 🎉
+              </p>
+              <h1
+                class="text-5xl sm:text-7xl font-black text-primary"
+                :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
+              >
+                {{ winnerResult?.winners[0]?.name }}
+              </h1>
+              <p class="text-3xl sm:text-4xl font-bold">
+                {{ winnerResult?.winners[0]?.score }} نقطة
+              </p>
+            </template>
+          </MotionScale>
           <UButton
             size="xl"
             to="/"
@@ -173,8 +235,16 @@ function closeModal() {
             <UCard
               v-for="team in board.teams"
               :key="team.id"
-              class="min-w-40 text-center"
+              class="min-w-40 text-center relative overflow-visible"
             >
+              <motion.div
+                v-if="leaderTeamId === team.id"
+                layout-id="leader-crown"
+                :transition="SPRINGS.gentle"
+                class="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl"
+              >
+                👑
+              </motion.div>
               <div class="flex items-center justify-center gap-2">
                 <span
                   v-if="team.icon"
@@ -190,12 +260,20 @@ function closeModal() {
                   {{ team.name }}
                 </p>
               </div>
-              <p
+              <motion.p
                 class="text-3xl sm:text-4xl font-black text-primary"
                 :style="{ color: team.color ?? undefined }"
+                :animate="{ scale: quizMotion.celebratingTeamId.value === team.id ? [1, 1.15, 1] : 1 }"
+                :transition="{ duration: DURATIONS.slow, ease: EASINGS.standard }"
               >
-                {{ team.score }}
-              </p>
+                <MotionNumber :value="team.score" />
+              </motion.p>
+              <MotionScale
+                :show="quizMotion.streakFor(team.id) >= 2"
+                :duration="DURATIONS.fast"
+              >
+                <span class="text-xs font-bold text-gold-600">🔥×{{ quizMotion.streakFor(team.id) }}</span>
+              </MotionScale>
               <div class="flex gap-1 justify-center mt-2">
                 <UButton
                   :color="armedPowerUp?.teamId === team.id && armedPowerUp.type === 'DoublePoints' ? 'primary' : 'neutral'"
@@ -221,6 +299,13 @@ function closeModal() {
             </UCard>
           </div>
 
+          <div class="h-1.5 rounded-full bg-primary/10 overflow-hidden">
+            <div
+              class="h-full rounded-full bg-primary transition-[width] duration-(--motion-duration-slow) ease-decelerate"
+              :style="{ width: `${progressPercent}%` }"
+            />
+          </div>
+
           <div
             class="flex-1 grid gap-2 sm:gap-3"
             :style="{ gridTemplateColumns: `repeat(${board.categories.length}, minmax(0, 1fr))` }"
@@ -241,7 +326,7 @@ function closeModal() {
                 :color="cell.isRevealed ? 'neutral' : 'primary'"
                 :variant="cell.isRevealed ? 'subtle' : 'solid'"
                 size="xl"
-                class="flex-1 justify-center text-lg sm:text-2xl font-black"
+                class="flex-1 justify-center text-lg sm:text-2xl font-black transition-transform active:scale-95"
                 @click="openQuestion(cell.questionId, cell.pointValue)"
               >
                 {{ cell.isRevealed ? '✓' : cell.pointValue }}
@@ -257,7 +342,10 @@ function closeModal() {
         :close="false"
       >
         <template #content>
-          <UCard v-if="activeQuestion">
+          <UCard
+            v-if="activeQuestion"
+            :class="{ 'animate-shake': quizMotion.shakingKey.value === 'question' }"
+          >
             <template #header>
               <p class="text-center font-bold text-primary text-lg">
                 {{ activeQuestion.pointValue }} نقطة
@@ -268,19 +356,23 @@ function closeModal() {
               {{ activeQuestion.prompt }}
             </p>
 
-            <p
-              v-if="shownAnswer"
-              class="text-xl sm:text-2xl font-bold text-center text-primary bg-primary/10 rounded-lg py-4 mb-4"
+            <MotionScale
+              :show="!!shownAnswer"
+              :duration="DURATIONS.base"
             >
-              {{ shownAnswer }}
-            </p>
+              <p class="text-xl sm:text-2xl font-bold text-center text-primary bg-primary/10 rounded-lg py-4 mb-4">
+                {{ shownAnswer }}
+              </p>
+            </MotionScale>
 
-            <p
-              v-else-if="retryNote"
-              class="text-lg font-bold text-center text-warning bg-warning/10 rounded-lg py-3 mb-4"
+            <MotionScale
+              :show="!shownAnswer && !!retryNote"
+              :duration="DURATIONS.base"
             >
-              {{ retryNote }}
-            </p>
+              <p class="text-lg font-bold text-center text-warning bg-warning/10 rounded-lg py-3 mb-4">
+                {{ retryNote }}
+              </p>
+            </MotionScale>
 
             <div
               v-if="!awarded && !shownAnswer"
@@ -313,6 +405,7 @@ function closeModal() {
                   :key="team.id"
                   :loading="awarding"
                   size="lg"
+                  class="transition-transform active:scale-95"
                   @click="award(team.id)"
                 >
                   {{ team.name }} أجاب صح
@@ -322,6 +415,7 @@ function closeModal() {
                   color="neutral"
                   variant="outline"
                   size="lg"
+                  class="transition-transform active:scale-95"
                   @click="award(null)"
                 >
                   لا أحد أجاب
@@ -331,6 +425,7 @@ function closeModal() {
                 v-else
                 block
                 size="lg"
+                class="transition-transform active:scale-95"
                 @click="closeModal"
               >
                 متابعة

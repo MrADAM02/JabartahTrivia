@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { AnimatePresence, motion } from 'motion-v'
 import type { RankingItemOptionDto, RankingSessionDto, SubmitRankingRoundResult } from '~/types/api'
+import { DURATIONS, EASINGS, SPRINGS } from '~/utils/motion'
 
 definePageMeta({ layout: false })
 
@@ -7,12 +9,15 @@ const route = useRoute()
 const sessionId = route.params.id as string
 
 const { getRankingSession, startNextRankingRound, submitRankingRound } = useApi()
+const quizMotion = useQuizMotion()
+const { motionTier } = useResponsiveMotion()
+const { pieces: confettiPieces } = useConfettiBurst()
 
 const session = ref<RankingSessionDto | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
 
-const currentRound = ref<{ roundId: string, teamName: string, listTitle: string } | null>(null)
+const currentRound = ref<{ roundId: string, teamId: string, teamName: string, listTitle: string } | null>(null)
 const pool = ref<RankingItemOptionDto[]>([])
 const placed = ref<RankingItemOptionDto[]>([])
 const roundResult = ref<SubmitRankingRoundResult | null>(null)
@@ -25,7 +30,7 @@ async function loadSession() {
     session.value = await getRankingSession(sessionId)
     if (session.value.pendingRound && !currentRound.value) {
       const p = session.value.pendingRound
-      currentRound.value = { roundId: p.roundId, teamName: p.teamName, listTitle: p.listTitle }
+      currentRound.value = { roundId: p.roundId, teamId: p.teamId, teamName: p.teamName, listTitle: p.listTitle }
       pool.value = [...p.items]
       placed.value = []
     }
@@ -43,7 +48,7 @@ async function startRound() {
   errorMessage.value = ''
   try {
     const result = await startNextRankingRound(sessionId)
-    currentRound.value = { roundId: result.roundId, teamName: result.teamName, listTitle: result.listTitle }
+    currentRound.value = { roundId: result.roundId, teamId: result.teamId, teamName: result.teamName, listTitle: result.listTitle }
     pool.value = [...result.items]
     placed.value = []
     roundResult.value = null
@@ -74,7 +79,15 @@ async function submitOrder() {
   submitting.value = true
   errorMessage.value = ''
   try {
-    roundResult.value = await submitRankingRound(sessionId, currentRound.value.roundId, placed.value.map(i => i.id))
+    const result = await submitRankingRound(sessionId, currentRound.value.roundId, placed.value.map(i => i.id))
+    roundResult.value = result
+    const correctCount = result.correctOrder.filter((item, index) => placed.value[index]?.id === item.id).length
+    if (correctCount === result.correctOrder.length) {
+      quizMotion.celebrateCorrect(currentRound.value.teamId)
+      quizMotion.recordOutcome(currentRound.value.teamId, true)
+    } else if (correctCount === 0) {
+      quizMotion.shake('round')
+    }
   } catch {
     errorMessage.value = 'تعذر إرسال الترتيب.'
   } finally {
@@ -91,6 +104,23 @@ async function nextRound() {
 }
 
 const winnerResult = computed(() => session.value ? getWinner(session.value.teams) : null)
+
+const leaderTeamId = computed(() => {
+  if (!session.value || session.value.teams.length !== 2) return null
+  const [a, b] = session.value.teams
+  if (!a || !b || a.score === b.score) return null
+  return a.score > b.score ? a.id : b.id
+})
+
+const progressPercent = computed(() => {
+  if (!session.value || session.value.totalRounds === 0) return 0
+  return Math.round((session.value.roundsPlayed / session.value.totalRounds) * 100)
+})
+
+const showCelebration = ref(false)
+watch(() => session.value?.status, (status) => {
+  if (status === 'Completed' && motionTier.value === 'full') showCelebration.value = true
+})
 </script>
 
 <template>
@@ -117,33 +147,61 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
       <template v-else-if="session">
         <div
           v-if="session.status === 'Completed'"
-          class="flex-1 flex flex-col items-center justify-center gap-6 text-center"
+          class="flex-1 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden"
         >
-          <template v-if="winnerResult?.isDraw">
-            <p class="text-2xl sm:text-3xl font-bold text-muted">
-              🤝 تعادل
-            </p>
-            <h1 class="text-4xl sm:text-6xl font-black text-primary">
-              {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-            </h1>
-            <p class="text-3xl sm:text-4xl font-bold">
-              {{ winnerResult.topScore }} نقطة
-            </p>
-          </template>
-          <template v-else>
-            <p class="text-2xl sm:text-3xl font-bold text-muted">
-              🎉 الفائز 🎉
-            </p>
-            <h1
-              class="text-5xl sm:text-7xl font-black text-primary"
-              :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
-            >
-              {{ winnerResult?.winners[0]?.name }}
-            </h1>
-            <p class="text-3xl sm:text-4xl font-bold">
-              {{ winnerResult?.winners[0]?.score }} نقطة
-            </p>
-          </template>
+          <span
+            v-if="showCelebration"
+            class="pointer-events-none absolute inset-0"
+            aria-hidden="true"
+          >
+            <span
+              v-for="piece in confettiPieces"
+              :key="piece.id"
+              class="confetti-piece"
+              :style="{
+                'left': `${piece.left}%`,
+                'width': `${piece.size}px`,
+                'height': `${piece.shape === 'circle' ? piece.size : piece.size * 1.6}px`,
+                'borderRadius': piece.shape === 'circle' ? '50%' : '2px',
+                'backgroundColor': piece.color,
+                'animationDuration': `${piece.duration}s`,
+                'animationDelay': `${piece.delay}s`,
+                '--drift': `${piece.drift}px`,
+                '--spin': piece.spin
+              }"
+            />
+          </span>
+
+          <MotionScale
+            :show="true"
+            :duration="DURATIONS.slow"
+          >
+            <template v-if="winnerResult?.isDraw">
+              <p class="text-2xl sm:text-3xl font-bold text-muted">
+                🤝 تعادل
+              </p>
+              <h1 class="text-4xl sm:text-6xl font-black text-primary">
+                {{ winnerResult.winners.map(w => w.name).join(' و ') }}
+              </h1>
+              <p class="text-3xl sm:text-4xl font-bold">
+                {{ winnerResult.topScore }} نقطة
+              </p>
+            </template>
+            <template v-else>
+              <p class="text-2xl sm:text-3xl font-bold text-muted">
+                🎉 الفائز 🎉
+              </p>
+              <h1
+                class="text-5xl sm:text-7xl font-black text-primary"
+                :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
+              >
+                {{ winnerResult?.winners[0]?.name }}
+              </h1>
+              <p class="text-3xl sm:text-4xl font-bold">
+                {{ winnerResult?.winners[0]?.score }} نقطة
+              </p>
+            </template>
+          </MotionScale>
           <UButton
             size="xl"
             to="/"
@@ -157,8 +215,16 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
             <UCard
               v-for="team in session.teams"
               :key="team.id"
-              class="min-w-40 text-center"
+              class="min-w-40 text-center relative overflow-visible"
             >
+              <motion.div
+                v-if="leaderTeamId === team.id"
+                layout-id="leader-crown"
+                :transition="SPRINGS.gentle"
+                class="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl"
+              >
+                👑
+              </motion.div>
               <div class="flex items-center justify-center gap-2">
                 <span
                   v-if="team.icon"
@@ -174,18 +240,34 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
                   {{ team.name }}
                 </p>
               </div>
-              <p
+              <motion.p
                 class="text-3xl sm:text-4xl font-black text-primary"
                 :style="{ color: team.color ?? undefined }"
+                :animate="{ scale: quizMotion.celebratingTeamId.value === team.id ? [1, 1.15, 1] : 1 }"
+                :transition="{ duration: DURATIONS.slow, ease: EASINGS.standard }"
               >
-                {{ team.score }}
-              </p>
+                <MotionNumber :value="team.score" />
+              </motion.p>
+              <MotionScale
+                :show="quizMotion.streakFor(team.id) >= 2"
+                :duration="DURATIONS.fast"
+              >
+                <span class="text-xs font-bold text-gold-600">🔥×{{ quizMotion.streakFor(team.id) }}</span>
+              </MotionScale>
             </UCard>
           </div>
 
-          <p class="text-center text-muted">
-            الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
-          </p>
+          <div class="max-w-md w-full mx-auto space-y-1">
+            <p class="text-center text-muted">
+              الجولة {{ session.roundsPlayed + 1 }} من {{ session.totalRounds }}
+            </p>
+            <div class="h-1.5 rounded-full bg-primary/10 overflow-hidden">
+              <div
+                class="h-full rounded-full bg-primary transition-[width] duration-(--motion-duration-slow) ease-decelerate"
+                :style="{ width: `${progressPercent}%` }"
+              />
+            </div>
+          </div>
 
           <UAlert
             v-if="errorMessage"
@@ -195,21 +277,25 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
           />
 
           <div class="flex-1 flex items-center justify-center">
-            <UCard
+            <MotionScale
               v-if="!currentRound"
-              class="text-center max-w-md w-full"
+              :show="true"
+              :duration="DURATIONS.base"
             >
-              <p class="text-lg mb-4">
-                اضغط لبدء الجولة التالية
-              </p>
-              <UButton
-                size="xl"
-                :loading="starting"
-                @click="startRound"
-              >
-                ابدأ الجولة التالية
-              </UButton>
-            </UCard>
+              <UCard class="text-center max-w-md w-full">
+                <p class="text-lg mb-4">
+                  اضغط لبدء الجولة التالية
+                </p>
+                <UButton
+                  size="xl"
+                  class="transition-transform active:scale-95"
+                  :loading="starting"
+                  @click="startRound"
+                >
+                  ابدأ الجولة التالية
+                </UButton>
+              </UCard>
+            </MotionScale>
 
             <UCard
               v-else-if="!roundResult"
@@ -236,6 +322,7 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
                       color="neutral"
                       variant="outline"
                       size="lg"
+                      class="transition-transform active:scale-95"
                       @click="tapItem(item)"
                     >
                       {{ item.label }}
@@ -248,14 +335,21 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
                     ترتيبك
                   </p>
                   <ol class="space-y-1">
-                    <li
-                      v-for="(item, index) in placed"
-                      :key="item.id"
-                      class="flex items-center gap-2 bg-primary/10 rounded-lg px-3 py-2 font-bold"
-                    >
-                      <span class="text-primary">{{ index + 1 }}</span>
-                      <span>{{ item.label }}</span>
-                    </li>
+                    <AnimatePresence>
+                      <motion.li
+                        v-for="(item, index) in placed"
+                        :key="item.id"
+                        layout
+                        :initial="{ opacity: 0, y: -10, scale: 0.9 }"
+                        :animate="{ opacity: 1, y: 0, scale: 1 }"
+                        :exit="{ opacity: 0, scale: 0.9 }"
+                        :transition="{ duration: DURATIONS.fast, ease: EASINGS.decelerate }"
+                        class="flex items-center gap-2 bg-primary/10 rounded-lg px-3 py-2 font-bold"
+                      >
+                        <span class="text-primary">{{ index + 1 }}</span>
+                        <span>{{ item.label }}</span>
+                      </motion.li>
+                    </AnimatePresence>
                     <li
                       v-if="placed.length === 0"
                       class="text-muted text-sm px-1"
@@ -271,6 +365,7 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
                   <UButton
                     color="neutral"
                     variant="ghost"
+                    class="transition-transform active:scale-95"
                     :disabled="placed.length === 0"
                     @click="undoLast"
                   >
@@ -279,12 +374,14 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
                   <UButton
                     color="neutral"
                     variant="ghost"
+                    class="transition-transform active:scale-95"
                     :disabled="placed.length === 0"
                     @click="resetOrder"
                   >
                     إعادة
                   </UButton>
                   <UButton
+                    class="transition-transform active:scale-95"
                     :loading="submitting"
                     :disabled="pool.length > 0"
                     @click="submitOrder"
@@ -298,6 +395,7 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
             <UCard
               v-else
               class="max-w-xl w-full text-center"
+              :class="{ 'animate-shake': quizMotion.shakingKey.value === 'round' }"
             >
               <p class="text-3xl font-black text-primary mb-2">
                 +{{ roundResult.pointsAwarded }} نقطة
@@ -330,6 +428,7 @@ const winnerResult = computed(() => session.value ? getWinner(session.value.team
               <UButton
                 size="xl"
                 block
+                class="transition-transform active:scale-95"
                 @click="nextRound"
               >
                 التالي

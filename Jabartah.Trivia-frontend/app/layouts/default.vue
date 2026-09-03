@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { DURATIONS } from '~/utils/motion'
+
 const { user, isLoggedIn, clearSession } = useAuth()
 
 const navLinks = computed(() => {
@@ -59,10 +61,11 @@ function logout() {
           <div
             v-if="isLoggedIn"
             class="relative"
+            @mouseenter="accountMenuOpen = true"
+            @mouseleave="accountMenuOpen = false"
           >
             <button
               class="flex items-center gap-2 text-sm font-bold text-white/90 hover:text-gold-300 transition-colors"
-              @click="accountMenuOpen = !accountMenuOpen"
             >
               <UIcon
                 name="i-lucide-user-circle"
@@ -70,24 +73,26 @@ function logout() {
               />
               {{ user?.name }}
             </button>
-            <div
-              v-if="accountMenuOpen"
-              class="absolute inset-s-0 mt-2 w-44 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-lg border border-green-100 dark:border-gray-800 overflow-hidden"
+            <MotionScale
+              :show="accountMenuOpen"
+              :duration="DURATIONS.fast"
             >
-              <NuxtLink
-                to="/account"
-                class="block px-4 py-2 text-sm font-bold hover:bg-green-50 dark:hover:bg-gray-800"
-                @click="accountMenuOpen = false"
-              >
-                حسابي
-              </NuxtLink>
-              <button
-                class="w-full text-start px-4 py-2 text-sm font-bold text-error hover:bg-green-50 dark:hover:bg-gray-800"
-                @click="logout"
-              >
-                تسجيل الخروج
-              </button>
-            </div>
+              <div class="absolute inset-s-0 mt-2 w-44 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-lg border border-green-100 dark:border-gray-800 overflow-hidden">
+                <NuxtLink
+                  to="/account"
+                  class="block px-4 py-2 text-sm font-bold hover:bg-green-50 dark:hover:bg-gray-800"
+                  @click="accountMenuOpen = false"
+                >
+                  حسابي
+                </NuxtLink>
+                <button
+                  class="w-full text-start px-4 py-2 text-sm font-bold text-error hover:bg-green-50 dark:hover:bg-gray-800"
+                  @click="logout"
+                >
+                  تسجيل الخروج
+                </button>
+              </div>
+            </MotionScale>
           </div>
           <NuxtLink
             v-else

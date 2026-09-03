@@ -31,4 +31,67 @@
   --color-gold-800: #855F00;
   --color-gold-900: #664A00;
   --color-gold-950: #402D00;
+
+  /* Motion tokens — kept in sync with app/utils/motion.ts. Durations here are
+     for plain Tailwind transition utilities (duration-[var(...)]) on hover,
+     color, and shadow changes; motion-v-driven animations use the JS
+     constants instead. */
+  --motion-duration-instant: 100ms;
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 250ms;
+  --motion-duration-slow: 350ms;
+
+  /* --ease-* is a themed Tailwind v4 namespace, so these also generate
+     ease-standard/ease-decelerate/ease-accelerate utilities. */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* --animate-* pairs with the @keyframes below to generate animate-shake/
+     animate-pulse-emphasis utilities. */
+  --animate-shake: shake var(--motion-duration-slow) var(--ease-standard);
+  --animate-pulse-emphasis: pulse-emphasis 1s var(--ease-standard) infinite;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+@keyframes pulse-emphasis {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* One-off winner-screen celebration burst — piece styling (color/size/drift/
+   timing) is randomized per-piece by useConfettiBurst.ts and passed in via
+   inline style + the --drift/--spin custom properties consumed below. Gated
+   behind useResponsiveMotion in each page (only rendered on 'full' tier), and
+   automatically collapsed by the prefers-reduced-motion rule further down.
+   Not a components/motion/ primitive since nothing else in the app needs
+   N-particle bursts. */
+.confetti-piece {
+  position: absolute;
+  top: -10px;
+  opacity: 0.95;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.15, 0.4, 0.4, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  60% { transform: translate(var(--drift, 0px), 55vh) rotate(calc(var(--spin, 1) * 300deg)); opacity: 1; }
+  100% { transform: translate(calc(var(--drift, 0px) * 1.4), 85vh) rotate(calc(var(--spin, 1) * 540deg)); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
