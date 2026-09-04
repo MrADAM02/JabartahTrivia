@@ -14,6 +14,7 @@ public class PasswordTeam
 
     public string? Color { get; private set; }   // hex string, e.g. "#EF4444"
     public string? Icon { get; private set; }    // lucide icon name, e.g. "i-lucide-trophy"
+    public bool ExtraTimeAvailable { get; private set; } = true;
 
     private PasswordTeam() { } // EF Core
 
@@ -30,4 +31,10 @@ public class PasswordTeam
         };
 
     public void AddPoints(int points) => Score += points;
+
+    public void UseExtraTime()
+    {
+        if (!ExtraTimeAvailable) throw new InvalidOperationException("Extra time was already used by this team.");
+        ExtraTimeAvailable = false;
+    }
 }

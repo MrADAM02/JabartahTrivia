@@ -7,7 +7,7 @@ namespace Jabartah.Trivia.Application.RankingGame.CreateRankingGameSession;
 public record CreateRankingGameSessionCommand(List<TeamSetupInput> Teams, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreateRankingGameSessionResult>;
 
 public record CreateRankingGameSessionResult(Guid RankingGameSessionId, List<RankingTeamDto> Teams);
-public record RankingTeamDto(Guid Id, string Name, int Score, string? Color, string? Icon);
+public record RankingTeamDto(Guid Id, string Name, int Score, string? Color, string? Icon, bool RevealPositionAvailable);
 
 public class CreateRankingGameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreateRankingGameSessionCommand, CreateRankingGameSessionResult>
@@ -29,7 +29,7 @@ public class CreateRankingGameSessionHandler(IApplicationDbContext db, ICurrentU
 
         return new CreateRankingGameSessionResult(
             session.Id,
-            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList()
+            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon, t.RevealPositionAvailable)).ToList()
         );
     }
 }

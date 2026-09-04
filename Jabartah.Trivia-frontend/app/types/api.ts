@@ -76,6 +76,7 @@ export interface TeamDto {
   twoAnswersAvailable: boolean
   color: string | null
   icon: string | null
+  halfOpponentTimerAvailable: boolean
 }
 
 export interface BoardCellDto {
@@ -96,6 +97,13 @@ export interface BoardDto {
   gameSessionId: string
   teams: TeamDto[]
   categories: CategoryColumnDto[]
+  currentTurnTeamId: string
+  currentTurnTeamName: string
+  pendingTimerDebuffTeamId: string | null
+}
+
+export interface ActivateTimerDebuffResult {
+  debuffedTeamId: string
 }
 
 export interface CreateGameSessionResult {
@@ -136,6 +144,7 @@ export interface PasswordTeamDto {
   score: number
   color: string | null
   icon: string | null
+  extraTimeAvailable: boolean
 }
 
 export interface CreatePasswordGameSessionResult {
@@ -177,6 +186,10 @@ export interface ResolvePasswordRoundResult {
   isSessionComplete: boolean
 }
 
+export interface UseExtraTimeResult {
+  extraTimeAvailable: boolean
+}
+
 export interface ConsumeRevealTokenResult {
   success: boolean
   expired: boolean
@@ -199,6 +212,12 @@ export interface RankingTeamDto {
   score: number
   color: string | null
   icon: string | null
+  revealPositionAvailable: boolean
+}
+
+export interface RevealRankingPositionResult {
+  position: number
+  itemLabel: string
 }
 
 export interface RankingItemOptionDto {

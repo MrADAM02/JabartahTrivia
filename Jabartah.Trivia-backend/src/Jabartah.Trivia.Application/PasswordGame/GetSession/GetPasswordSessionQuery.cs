@@ -27,7 +27,7 @@ public class GetPasswordSessionHandler(IApplicationDbContext db) : IQueryHandler
         return new PasswordSessionDto(
             session.Id,
             session.Status.ToString(),
-            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList(),
+            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon, t.ExtraTimeAvailable)).ToList(),
             session.Rounds.Count(r => r.Outcome != PasswordRoundOutcome.Pending),
             session.MaxRounds,
             pendingDto

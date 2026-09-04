@@ -22,7 +22,7 @@ public class ResolvePasswordRoundHandler(IApplicationDbContext db) : ICommandHan
         await db.SaveChangesAsync(ct);
 
         return new ResolvePasswordRoundResult(
-            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList(),
+            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon, t.ExtraTimeAvailable)).ToList(),
             session.Status == PasswordGameSessionStatus.Completed
         );
     }

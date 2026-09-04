@@ -14,6 +14,7 @@ public class RankingTeam
 
     public string? Color { get; private set; }   // hex string, e.g. "#EF4444"
     public string? Icon { get; private set; }    // lucide icon name, e.g. "i-lucide-trophy"
+    public bool RevealPositionAvailable { get; private set; } = true;
 
     private RankingTeam() { } // EF Core
 
@@ -30,4 +31,10 @@ public class RankingTeam
         };
 
     public void AddPoints(int points) => Score += points;
+
+    public void UseRevealPosition()
+    {
+        if (!RevealPositionAvailable) throw new InvalidOperationException("Reveal position was already used by this team.");
+        RevealPositionAvailable = false;
+    }
 }

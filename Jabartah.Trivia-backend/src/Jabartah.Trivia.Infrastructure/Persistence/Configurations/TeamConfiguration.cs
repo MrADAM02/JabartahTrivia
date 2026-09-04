@@ -14,8 +14,10 @@ public class TeamConfiguration : IEntityTypeConfiguration<Team>
         builder.Property(t => t.Score).IsRequired();
         builder.Property(t => t.DoublePointsAvailable).IsRequired();
         builder.Property(t => t.TwoAnswersAvailable).IsRequired();
+        builder.Property(t => t.HalfOpponentTimerAvailable).IsRequired();
         builder.Property(t => t.Color).HasMaxLength(20);
         builder.Property(t => t.Icon).HasMaxLength(50);
+        builder.Property(t => t.TurnOrder).IsRequired();
         builder.HasIndex(t => t.GameSessionId);
     }
 }

@@ -1,4 +1,5 @@
 using Jabartah.Trivia.Application.Abstractions;
+using Jabartah.Trivia.Application.GameSessions.ActivateTimerDebuff;
 using Jabartah.Trivia.Application.GameSessions.AwardPoints;
 using Jabartah.Trivia.Application.GameSessions.CreateGameSession;
 using Jabartah.Trivia.Application.GameSessions.GetBoard;
@@ -30,6 +31,10 @@ public static class GameSessionEndpoints
         group.MapPost("/{id:guid}/questions/{questionId:guid}/reveal-answer", async (
                 Guid id, Guid questionId, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new RevealAnswerCommand(id, questionId), ct)));
+
+        group.MapPost("/{id:guid}/teams/{teamId:guid}/timer-debuff", async (
+                Guid id, Guid teamId, IDispatcher dispatcher, CancellationToken ct) =>
+            Results.Ok(await dispatcher.Send(new ActivateTimerDebuffCommand(id, teamId), ct)));
     }
 
     public record SelectQuestionRequest(Guid? ActivatingTeamId, string? PowerUp);

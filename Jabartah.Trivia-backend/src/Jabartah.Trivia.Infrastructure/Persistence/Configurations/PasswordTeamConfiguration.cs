@@ -15,6 +15,7 @@ public class PasswordTeamConfiguration : IEntityTypeConfiguration<PasswordTeam>
         builder.Property(t => t.TurnOrder).IsRequired();
         builder.Property(t => t.Color).HasMaxLength(20);
         builder.Property(t => t.Icon).HasMaxLength(50);
+        builder.Property(t => t.ExtraTimeAvailable).IsRequired();
         builder.HasIndex(t => t.PasswordGameSessionId);
     }
 }

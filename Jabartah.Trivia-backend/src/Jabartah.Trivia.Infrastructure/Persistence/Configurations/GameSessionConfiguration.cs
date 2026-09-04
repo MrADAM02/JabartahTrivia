@@ -19,6 +19,8 @@ public class GameSessionConfiguration : IEntityTypeConfiguration<GameSession>
 
         builder.Property(s => s.CreatedAt).IsRequired();
         builder.Property(s => s.CompletedAt);
+        builder.Property(s => s.CurrentTurnTeamId).IsRequired();
+        builder.Property(s => s.PendingTimerDebuffTeamId);
 
         // Deleting an account anonymizes ownership of sessions rather than deleting shared
         // game data other players were part of -- SetNull, not Cascade.
@@ -53,6 +55,7 @@ public class GameQuestionStateConfiguration : IEntityTypeConfiguration<GameQuest
     {
         builder.ToTable("GameQuestionStates");
         builder.HasKey(s => s.Id);
+        builder.Property(s => s.TurnTeamId).IsRequired();
         builder.Property(s => s.RevealedAt).IsRequired();
         builder.Property(s => s.PowerUpTeamId);
         builder.Property(s => s.ActivePowerUp).HasConversion<string>().HasMaxLength(20);

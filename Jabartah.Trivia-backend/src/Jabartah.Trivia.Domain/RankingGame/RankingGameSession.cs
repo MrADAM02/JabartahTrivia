@@ -129,6 +129,24 @@ public class RankingGameSession
         return round;
     }
 
+    // Only usable by the team whose round it currently is -- a hint for a round
+    // you're not ranking makes no sense. Picking which item/position to reveal
+    // is the Application handler's job (it needs the round's content, which the
+    // domain here has no access to).
+    public void UseRevealPosition(Guid roundId, Guid teamId)
+    {
+        var round = _rounds.FirstOrDefault(r => r.Id == roundId)
+            ?? throw new InvalidOperationException("Round does not belong to this session.");
+        if (round.Status != RankingRoundStatus.Pending)
+            throw new InvalidOperationException("This round was already submitted.");
+        if (round.TeamId != teamId)
+            throw new InvalidOperationException("Only the team currently ranking this round can use this power-up.");
+
+        var team = _teams.FirstOrDefault(t => t.Id == teamId)
+            ?? throw new InvalidOperationException("Team does not belong to this session.");
+        team.UseRevealPosition();
+    }
+
     public void SubmitRound(Guid roundId, int pointsAwarded)
     {
         var round = _rounds.FirstOrDefault(r => r.Id == roundId)

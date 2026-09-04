@@ -21,6 +21,7 @@ public class GameQuestionState
     public Guid Id { get; private set; }
     public Guid GameSessionId { get; private set; }
     public Guid QuestionId { get; private set; }
+    public Guid TurnTeamId { get; private set; }
     public Guid? WonByTeamId { get; private set; }
     public DateTime RevealedAt { get; private set; }
     public Guid? PowerUpTeamId { get; private set; }
@@ -30,12 +31,13 @@ public class GameQuestionState
 
     private GameQuestionState() { } // EF Core
 
-    public static GameQuestionState Create(Guid gameSessionId, Guid questionId, Guid? powerUpTeamId, PowerUpType? activePowerUp) =>
+    public static GameQuestionState Create(Guid gameSessionId, Guid questionId, Guid turnTeamId, Guid? powerUpTeamId, PowerUpType? activePowerUp) =>
         new()
         {
             Id = Guid.NewGuid(),
             GameSessionId = gameSessionId,
             QuestionId = questionId,
+            TurnTeamId = turnTeamId,
             RevealedAt = DateTime.UtcNow,
             PowerUpTeamId = powerUpTeamId,
             ActivePowerUp = activePowerUp
@@ -76,6 +78,8 @@ public class GameSession
     public Guid? UserId { get; private set; }   // owner, if created while logged in; null for guest play
     public DateTime CreatedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
+    public Guid CurrentTurnTeamId { get; private set; }
+    public Guid? PendingTimerDebuffTeamId { get; private set; }
 
     private readonly List<Team> _teams = new();
     public IReadOnlyCollection<Team> Teams => _teams.AsReadOnly();
@@ -93,8 +97,8 @@ public class GameSession
         var teamsList = teams.ToList();
         var categories = categoryIds.ToList();
 
-        if (teamsList.Count < 2)
-            throw new InvalidOperationException("A game session needs at least 2 teams.");
+        if (teamsList.Count != 2)
+            throw new InvalidOperationException("Trivia requires exactly 2 teams.");
         if (categories.Count != 6)
             throw new InvalidOperationException("A trivia session needs exactly 6 categories.");
 
@@ -105,8 +109,10 @@ public class GameSession
             CreatedAt = DateTime.UtcNow
         };
 
-        foreach (var (name, color, icon) in teamsList)
-            session._teams.Add(Team.Create(session.Id, name, color, icon));
+        for (var i = 0; i < teamsList.Count; i++)
+            session._teams.Add(Team.Create(session.Id, teamsList[i].Name, i, teamsList[i].Color, teamsList[i].Icon));
+
+        session.CurrentTurnTeamId = session._teams.First(t => t.TurnOrder == 0).Id;
 
         session._categoryIds.AddRange(categories);
         return session;
@@ -129,6 +135,8 @@ public class GameSession
             throw new InvalidOperationException("This question was already used in this session.");
         if ((activatingTeamId is null) != (powerUp is null))
             throw new InvalidOperationException("A power-up requires an activating team, and vice versa.");
+        if (activatingTeamId is not null && activatingTeamId != CurrentTurnTeamId)
+            throw new InvalidOperationException("Only the team whose turn it is can activate a power-up.");
 
         if (powerUp is not null)
         {
@@ -138,9 +146,25 @@ public class GameSession
             else team.UseTwoAnswers();
         }
 
-        var state = GameQuestionState.Create(Id, questionId, activatingTeamId, powerUp);
+        var state = GameQuestionState.Create(Id, questionId, CurrentTurnTeamId, activatingTeamId, powerUp);
         _questionStates.Add(state);
         return state;
+    }
+
+    // Standalone action, not tied to RevealQuestion -- unlike the other two power-ups this
+    // doesn't affect the arming team's own question at all, it sets up a debuff that applies
+    // to the opponent's *next* question once the turn flips to them.
+    public void ActivateTimerDebuff(Guid teamId)
+    {
+        if (teamId != CurrentTurnTeamId)
+            throw new InvalidOperationException("Only the team whose turn it is can activate this power-up.");
+        if (PendingTimerDebuffTeamId is not null)
+            throw new InvalidOperationException("A timer debuff is already pending.");
+
+        var team = _teams.FirstOrDefault(t => t.Id == teamId)
+            ?? throw new InvalidOperationException("Team does not belong to this session.");
+        team.UseHalfOpponentTimer();
+        PendingTimerDebuffTeamId = _teams.First(t => t.Id != teamId).Id;
     }
 
     // Returns the retry team id if a retry is now pending, else null (question fully resolved).
@@ -148,6 +172,8 @@ public class GameSession
     {
         var state = _questionStates.FirstOrDefault(q => q.QuestionId == questionId)
             ?? throw new InvalidOperationException("Question was not revealed in this session yet.");
+        if (winningTeamId is not null && winningTeamId != state.TurnTeamId)
+            throw new ArgumentException("Only the team whose turn it was on this question can be credited.");
 
         var canRetry = state.RecordAttempt(winningTeamId);
 
@@ -156,6 +182,13 @@ public class GameSession
             var team = _teams.FirstOrDefault(t => t.Id == teamId)
                 ?? throw new InvalidOperationException("Team does not belong to this session.");
             team.AddPoints(state.AwardsDoublePoints(teamId) ? points * 2 : points);
+        }
+
+        if (!canRetry)
+        {
+            if (state.TurnTeamId == PendingTimerDebuffTeamId)
+                PendingTimerDebuffTeamId = null;
+            CurrentTurnTeamId = _teams.First(t => t.Id != state.TurnTeamId).Id;
         }
 
         return canRetry ? state.PowerUpTeamId : null;

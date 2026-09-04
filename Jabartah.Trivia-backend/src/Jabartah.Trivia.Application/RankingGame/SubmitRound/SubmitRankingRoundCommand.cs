@@ -41,7 +41,7 @@ public class SubmitRankingRoundHandler(IApplicationDbContext db) : ICommandHandl
         return new SubmitRankingRoundResult(
             points,
             correctOrder,
-            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList(),
+            session.Teams.Select(t => new RankingTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon, t.RevealPositionAvailable)).ToList(),
             session.Status == RankingGameSessionStatus.Completed
         );
     }

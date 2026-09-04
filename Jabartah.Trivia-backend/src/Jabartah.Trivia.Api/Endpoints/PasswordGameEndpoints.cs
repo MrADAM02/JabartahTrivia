@@ -4,6 +4,7 @@ using Jabartah.Trivia.Application.PasswordGame.GetSession;
 using Jabartah.Trivia.Application.PasswordGame.IssueRevealToken;
 using Jabartah.Trivia.Application.PasswordGame.ResolveRound;
 using Jabartah.Trivia.Application.PasswordGame.StartNextRound;
+using Jabartah.Trivia.Application.PasswordGame.UseExtraTime;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -29,6 +30,10 @@ public static class PasswordGameEndpoints
         group.MapPost("/{id:guid}/rounds/{roundId:guid}/resolve", async (
                 Guid id, Guid roundId, ResolveRoundRequest body, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new ResolvePasswordRoundCommand(id, roundId, body.Correct), ct)));
+
+        group.MapPost("/{id:guid}/teams/{teamId:guid}/extra-time", async (
+                Guid id, Guid teamId, IDispatcher dispatcher, CancellationToken ct) =>
+            Results.Ok(await dispatcher.Send(new UseExtraTimeCommand(id, teamId), ct)));
     }
 
     public record ResolveRoundRequest(bool Correct);

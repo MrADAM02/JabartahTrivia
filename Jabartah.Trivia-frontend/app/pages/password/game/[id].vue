@@ -12,7 +12,9 @@ const COUNTDOWN_EMPHASIS_THRESHOLD = 10
 const route = useRoute()
 const sessionId = route.params.id as string
 
-const { getPasswordSession, startNextPasswordRound, issueRevealToken, resolvePasswordRound } = useApi()
+const EXTRA_TIME_SECONDS = 15
+
+const { getPasswordSession, startNextPasswordRound, issueRevealToken, resolvePasswordRound, useExtraTime } = useApi()
 const quizMotion = useQuizMotion()
 const { motionTier } = useResponsiveMotion()
 const { pieces: confettiPieces } = useConfettiBurst()
@@ -26,6 +28,7 @@ const secondsLeft = ref<number | null>(null)
 const starting = ref(false)
 const revealing = ref(false)
 const resolving = ref(false)
+const usingExtraTime = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | undefined
 
 async function loadSession() {
@@ -102,6 +105,26 @@ async function resolve(correct: boolean) {
     resolving.value = false
   }
 }
+
+async function activateExtraTime() {
+  const pending = session.value?.pendingRound
+  if (!pending) return
+  usingExtraTime.value = true
+  try {
+    await useExtraTime(sessionId, pending.teamId)
+    const team = session.value?.teams.find(t => t.id === pending.teamId)
+    if (team) team.extraTimeAvailable = false
+    if (secondsLeft.value !== null) secondsLeft.value += EXTRA_TIME_SECONDS
+  } catch {
+    errorMessage.value = 'تعذر تفعيل الوقت الإضافي.'
+  } finally {
+    usingExtraTime.value = false
+  }
+}
+
+const pendingTeam = computed(() =>
+  session.value?.pendingRound ? session.value.teams.find(t => t.id === session.value!.pendingRound!.teamId) : null
+)
 
 const winnerResult = computed(() => session.value ? getWinner(session.value.teams) : null)
 
@@ -313,6 +336,14 @@ watch(() => session.value?.status, (status) => {
                   يقوم أحد أفراد الفريق بمسح الرمز بجواله ليرى الكلمة السرية بمفرده
                 </p>
 
+                <p
+                  v-if="secondsLeft !== null"
+                  class="text-3xl font-black mb-4 transition-colors"
+                  :class="secondsLeft <= COUNTDOWN_EMPHASIS_THRESHOLD ? 'text-error animate-pulse-emphasis' : 'text-primary'"
+                >
+                  {{ secondsLeft }} ثانية
+                </p>
+
                 <div v-if="!qrDataUrl">
                   <UButton
                     size="xl"
@@ -333,13 +364,29 @@ watch(() => session.value?.status, (status) => {
                     alt="QR"
                     class="mx-auto rounded-lg border border-default"
                   >
-                  <p
-                    v-if="secondsLeft !== null"
-                    class="text-2xl font-black transition-colors"
-                    :class="secondsLeft <= COUNTDOWN_EMPHASIS_THRESHOLD ? 'text-error animate-pulse-emphasis' : 'text-primary'"
-                  >
-                    {{ secondsLeft }} ثانية
-                  </p>
+
+                  <div class="flex justify-center">
+                    <UButton
+                      v-if="pendingTeam?.extraTimeAvailable"
+                      color="secondary"
+                      variant="soft"
+                      size="xs"
+                      class="transition-transform active:scale-95"
+                      :loading="usingExtraTime"
+                      @click="activateExtraTime"
+                    >
+                      ⏱️ وقت إضافي (+{{ EXTRA_TIME_SECONDS }} ث)
+                    </UButton>
+                    <UBadge
+                      v-else
+                      color="neutral"
+                      variant="subtle"
+                      size="sm"
+                    >
+                      ⏱️ استُخدمت
+                    </UBadge>
+                  </div>
+
                   <div class="flex flex-wrap gap-2 justify-center">
                     <UButton
                       color="success"

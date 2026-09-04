@@ -1,5 +1,6 @@
 import type {
   AccountDto,
+  ActivateTimerDebuffResult,
   AuthResult,
   AwardPointsResult,
   BoardDto,
@@ -26,9 +27,11 @@ import type {
   SubmitGuessResult,
   SubmitRankingRoundResult,
   TeamSetupInput,
+  RevealRankingPositionResult,
   Top100CategoryDto,
   Top100SessionDto,
-  CreateTop100GameSessionResult
+  CreateTop100GameSessionResult,
+  UseExtraTimeResult
 } from '~/types/api'
 
 export function useApi() {
@@ -106,6 +109,12 @@ export function useApi() {
       { method: 'POST' }
     )
 
+  const activateTimerDebuff = (gameSessionId: string, teamId: string) =>
+    api<ActivateTimerDebuffResult>(
+      `/api/game-sessions/${gameSessionId}/teams/${teamId}/timer-debuff`,
+      { method: 'POST' }
+    )
+
   // Password game (كلمة السر)
 
   const listPasswordCategories = () => api<PasswordCategoryDto[]>('/api/password-categories')
@@ -134,6 +143,9 @@ export function useApi() {
   const consumeRevealToken = (revealToken: string) =>
     api<ConsumeRevealTokenResult>(`/api/reveal/${revealToken}`, { method: 'POST' })
 
+  const useExtraTime = (sessionId: string, teamId: string) =>
+    api<UseExtraTimeResult>(`/api/password-sessions/${sessionId}/teams/${teamId}/extra-time`, { method: 'POST' })
+
   // Ranking game (رتبها)
 
   const listRankingCategories = () => api<RankingCategoryDto[]>('/api/ranking-categories')
@@ -154,6 +166,12 @@ export function useApi() {
     api<SubmitRankingRoundResult>(`/api/ranking-sessions/${sessionId}/rounds/${roundId}/submit`, {
       method: 'POST',
       body: { orderedItemIds }
+    })
+
+  const revealRankingPosition = (sessionId: string, roundId: string, teamId: string) =>
+    api<RevealRankingPositionResult>(`/api/ranking-sessions/${sessionId}/rounds/${roundId}/reveal-position`, {
+      method: 'POST',
+      body: { teamId }
     })
 
   // تحدي الـ100
@@ -194,6 +212,7 @@ export function useApi() {
     selectQuestion,
     awardPoints,
     revealAnswer,
+    activateTimerDebuff,
     listPasswordCategories,
     createPasswordGameSession,
     getPasswordSession,
@@ -201,11 +220,13 @@ export function useApi() {
     issueRevealToken,
     resolvePasswordRound,
     consumeRevealToken,
+    useExtraTime,
     listRankingCategories,
     createRankingGameSession,
     getRankingSession,
     startNextRankingRound,
     submitRankingRound,
+    revealRankingPosition,
     listTop100Categories,
     createTop100GameSession,
     getTop100Session,

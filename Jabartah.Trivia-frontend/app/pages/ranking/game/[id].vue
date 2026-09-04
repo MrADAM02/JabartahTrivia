@@ -8,7 +8,7 @@ definePageMeta({ layout: false })
 const route = useRoute()
 const sessionId = route.params.id as string
 
-const { getRankingSession, startNextRankingRound, submitRankingRound } = useApi()
+const { getRankingSession, startNextRankingRound, submitRankingRound, revealRankingPosition } = useApi()
 const quizMotion = useQuizMotion()
 const { motionTier } = useResponsiveMotion()
 const { pieces: confettiPieces } = useConfettiBurst()
@@ -24,6 +24,8 @@ const roundResult = ref<SubmitRankingRoundResult | null>(null)
 
 const starting = ref(false)
 const submitting = ref(false)
+const revealingPosition = ref(false)
+const revealedHint = ref<{ position: number, itemLabel: string } | null>(null)
 
 async function loadSession() {
   try {
@@ -52,6 +54,7 @@ async function startRound() {
     pool.value = [...result.items]
     placed.value = []
     roundResult.value = null
+    revealedHint.value = null
   } catch {
     errorMessage.value = 'تعذر بدء الجولة.'
   } finally {
@@ -100,8 +103,28 @@ async function nextRound() {
   pool.value = []
   placed.value = []
   roundResult.value = null
+  revealedHint.value = null
   await loadSession()
 }
+
+async function activateRevealPosition() {
+  if (!currentRound.value) return
+  revealingPosition.value = true
+  try {
+    const result = await revealRankingPosition(sessionId, currentRound.value.roundId, currentRound.value.teamId)
+    revealedHint.value = { position: result.position, itemLabel: result.itemLabel }
+    const team = session.value?.teams.find(t => t.id === currentRound.value?.teamId)
+    if (team) team.revealPositionAvailable = false
+  } catch {
+    errorMessage.value = 'تعذر تفعيل التلميح.'
+  } finally {
+    revealingPosition.value = false
+  }
+}
+
+const currentRoundTeam = computed(() =>
+  currentRound.value ? session.value?.teams.find(t => t.id === currentRound.value?.teamId) : null
+)
 
 const winnerResult = computed(() => session.value ? getWinner(session.value.teams) : null)
 
@@ -311,6 +334,40 @@ watch(() => session.value?.status, (status) => {
               </template>
 
               <div class="space-y-4">
+                <div class="flex justify-center">
+                  <UButton
+                    v-if="currentRoundTeam?.revealPositionAvailable"
+                    color="secondary"
+                    variant="soft"
+                    size="xs"
+                    class="transition-transform active:scale-95"
+                    :loading="revealingPosition"
+                    @click="activateRevealPosition"
+                  >
+                    💡 تلميح: اكشف موضع عنصر
+                  </UButton>
+                  <UBadge
+                    v-else-if="!revealedHint"
+                    color="neutral"
+                    variant="subtle"
+                    size="sm"
+                  >
+                    💡 استُخدم التلميح
+                  </UBadge>
+                </div>
+
+                <MotionScale
+                  :show="!!revealedHint"
+                  :duration="DURATIONS.base"
+                >
+                  <p
+                    v-if="revealedHint"
+                    class="text-center font-bold text-sm bg-secondary/15 ring-1 ring-secondary/40 rounded-lg py-2 px-3"
+                  >
+                    💡 العنصر في المركز {{ revealedHint.position }} هو «{{ revealedHint.itemLabel }}»
+                  </p>
+                </MotionScale>
+
                 <div>
                   <p class="text-sm font-bold text-muted mb-2">
                     البطاقات

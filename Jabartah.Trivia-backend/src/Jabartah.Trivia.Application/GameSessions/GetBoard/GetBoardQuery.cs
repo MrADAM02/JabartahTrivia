@@ -6,7 +6,14 @@ namespace Jabartah.Trivia.Application.GameSessions.GetBoard;
 
 public record GetBoardQuery(Guid GameSessionId) : IQuery<BoardDto>;
 
-public record BoardDto(Guid GameSessionId, List<TeamDto> Teams, List<CategoryColumnDto> Categories);
+public record BoardDto(
+    Guid GameSessionId,
+    List<TeamDto> Teams,
+    List<CategoryColumnDto> Categories,
+    Guid CurrentTurnTeamId,
+    string CurrentTurnTeamName,
+    Guid? PendingTimerDebuffTeamId
+);
 public record CategoryColumnDto(Guid CategoryId, string Name, string? Icon, List<BoardCellDto> Cells);
 public record BoardCellDto(Guid QuestionId, int PointValue, bool IsRevealed, Guid? WonByTeamId);
 
@@ -45,10 +52,15 @@ public class GetBoardHandler(IApplicationDbContext db) : IQueryHandler<GetBoardQ
                 .ToList()
         )).ToList();
 
+        var turnTeam = session.Teams.First(t => t.Id == session.CurrentTurnTeamId);
+
         return new BoardDto(
             session.Id,
-            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score, t.DoublePointsAvailable, t.TwoAnswersAvailable, t.Color, t.Icon)).ToList(),
-            columns
+            session.Teams.Select(t => new TeamDto(t.Id, t.Name, t.Score, t.DoublePointsAvailable, t.TwoAnswersAvailable, t.Color, t.Icon, t.HalfOpponentTimerAvailable)).ToList(),
+            columns,
+            turnTeam.Id,
+            turnTeam.Name,
+            session.PendingTimerDebuffTeamId
         );
     }
 }

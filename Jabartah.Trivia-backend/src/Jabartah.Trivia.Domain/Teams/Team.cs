@@ -8,12 +8,14 @@ public class Team
     public int Score { get; private set; }
     public bool DoublePointsAvailable { get; private set; } = true;
     public bool TwoAnswersAvailable { get; private set; } = true;
+    public bool HalfOpponentTimerAvailable { get; private set; } = true;
     public string? Color { get; private set; }   // hex string, e.g. "#EF4444"
     public string? Icon { get; private set; }    // lucide icon name, e.g. "i-lucide-trophy"
+    public int TurnOrder { get; private set; }
 
     private Team() { } // EF Core
 
-    public static Team Create(Guid gameSessionId, string name, string? color = null, string? icon = null) =>
+    public static Team Create(Guid gameSessionId, string name, int turnOrder, string? color = null, string? icon = null) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -21,7 +23,8 @@ public class Team
             Name = name,
             Score = 0,
             Color = color,
-            Icon = icon
+            Icon = icon,
+            TurnOrder = turnOrder
         };
 
     public void AddPoints(int points) => Score += points;
@@ -36,5 +39,11 @@ public class Team
     {
         if (!TwoAnswersAvailable) throw new InvalidOperationException("Two answers was already used by this team.");
         TwoAnswersAvailable = false;
+    }
+
+    public void UseHalfOpponentTimer()
+    {
+        if (!HalfOpponentTimerAvailable) throw new InvalidOperationException("Half opponent timer was already used by this team.");
+        HalfOpponentTimerAvailable = false;
     }
 }

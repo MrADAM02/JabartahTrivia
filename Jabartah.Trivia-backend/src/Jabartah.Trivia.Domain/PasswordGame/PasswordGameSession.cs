@@ -53,7 +53,7 @@ public class PasswordRound
 // See CLAUDE.md for the QR-reveal UX this pairs with (PasswordRevealToken).
 public class PasswordGameSession
 {
-    public static readonly int[] AllowedRoundsPerTeam = [5, 7, 10];
+    public static readonly int[] AllowedRoundsPerTeam = [3, 5, 7];
     public const int PointsPerWord = 1;
 
     public int RoundsPerTeam { get; private set; }
@@ -128,6 +128,15 @@ public class PasswordGameSession
         var round = PasswordRound.Create(Id, roundNumber, team.Id, wordId);
         _rounds.Add(round);
         return round;
+    }
+
+    // Purely a one-time-per-game flag; the actual +15s is a frontend-only visual
+    // countdown adjustment (the round timer itself is never enforced server-side).
+    public void UseExtraTime(Guid teamId)
+    {
+        var team = _teams.FirstOrDefault(t => t.Id == teamId)
+            ?? throw new InvalidOperationException("Team does not belong to this session.");
+        team.UseExtraTime();
     }
 
     public void ResolveRound(Guid roundId, PasswordRoundOutcome outcome)

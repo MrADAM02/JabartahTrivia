@@ -7,7 +7,7 @@ namespace Jabartah.Trivia.Application.PasswordGame.CreatePasswordGameSession;
 public record CreatePasswordGameSessionCommand(List<TeamSetupInput> Teams, List<Guid> CategoryIds, int RoundsPerTeam) : ICommand<CreatePasswordGameSessionResult>;
 
 public record CreatePasswordGameSessionResult(Guid PasswordGameSessionId, List<PasswordTeamDto> Teams);
-public record PasswordTeamDto(Guid Id, string Name, int Score, string? Color, string? Icon);
+public record PasswordTeamDto(Guid Id, string Name, int Score, string? Color, string? Icon, bool ExtraTimeAvailable);
 
 public class CreatePasswordGameSessionHandler(IApplicationDbContext db, ICurrentUserAccessor currentUser)
     : ICommandHandler<CreatePasswordGameSessionCommand, CreatePasswordGameSessionResult>
@@ -29,7 +29,7 @@ public class CreatePasswordGameSessionHandler(IApplicationDbContext db, ICurrent
 
         return new CreatePasswordGameSessionResult(
             session.Id,
-            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon)).ToList()
+            session.Teams.Select(t => new PasswordTeamDto(t.Id, t.Name, t.Score, t.Color, t.Icon, t.ExtraTimeAvailable)).ToList()
         );
     }
 }

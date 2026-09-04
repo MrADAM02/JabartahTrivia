@@ -9,7 +9,7 @@ const teams = ref<TeamSetupInput[]>([
 ])
 const categories = ref<PasswordCategoryDto[]>([])
 const selectedCategoryIds = ref<string[]>([])
-const roundsOptions = [5, 7, 10]
+const roundsOptions = [3, 5, 7]
 const roundsIndex = ref(0)
 const roundsPerTeam = computed(() => roundsOptions[roundsIndex.value]!)
 const loading = ref(false)
