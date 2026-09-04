@@ -125,9 +125,6 @@ export interface RevealAnswerResult {
 export interface AwardPointsResult {
   teams: TeamDto[]
   correctAnswer: string | null
-  canRetry: boolean
-  retryTeamId: string | null
-  retryTeamName: string | null
 }
 
 // Password game (كلمة السر)

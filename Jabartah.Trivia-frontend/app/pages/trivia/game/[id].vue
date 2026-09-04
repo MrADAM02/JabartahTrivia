@@ -24,7 +24,6 @@ const activeQuestion = ref<{
   questionId: string
   pointValue: number
   prompt: string
-  blockManualReveal: boolean
   turnTeamId: string
   turnTeamName: string
   timerDebuffed: boolean
@@ -34,7 +33,6 @@ const awarded = ref(false)
 const awarding = ref(false)
 const revealing = ref(false)
 const armedPowerUp = ref<{ teamId: string, type: 'DoublePoints' | 'TwoAnswers' } | null>(null)
-const retryNote = ref<string | null>(null)
 
 const secondsLeft = ref<number | null>(null)
 let answerTimer: ReturnType<typeof setInterval> | undefined
@@ -137,7 +135,6 @@ watch(allRevealed, (isDone) => {
 
 async function openQuestion(questionId: string, pointValue: number) {
   if (!board.value) return
-  const blockManualReveal = armedPowerUp.value?.type === 'TwoAnswers'
   try {
     const result = await selectQuestion(
       gameSessionId,
@@ -151,14 +148,12 @@ async function openQuestion(questionId: string, pointValue: number) {
       questionId,
       pointValue,
       prompt: result.prompt,
-      blockManualReveal,
       turnTeamId: board.value.currentTurnTeamId,
       turnTeamName: board.value.currentTurnTeamName,
       timerDebuffed
     }
     shownAnswer.value = null
     awarded.value = false
-    retryNote.value = null
     modalOpen.value = true
     startAnswerTimer(timerDebuffed ? Math.round(ANSWER_SECONDS / 2) : ANSWER_SECONDS)
   } catch {
@@ -185,19 +180,13 @@ async function award(teamId: string | null) {
   awarding.value = true
   try {
     const result = await awardPoints(gameSessionId, activeQuestion.value.questionId, teamId)
-    if (result.canRetry) {
-      retryNote.value = `لم يُحسب الجواب — محاولة أخيرة لفريق ${result.retryTeamName}`
-      quizMotion.shake('question')
-      startAnswerTimer(activeQuestion.value.timerDebuffed ? Math.round(ANSWER_SECONDS / 2) : ANSWER_SECONDS)
+    shownAnswer.value = result.correctAnswer
+    awarded.value = true
+    if (teamId) {
+      quizMotion.celebrateCorrect(teamId)
+      quizMotion.recordOutcome(teamId, true)
     } else {
-      shownAnswer.value = result.correctAnswer
-      awarded.value = true
-      if (teamId) {
-        quizMotion.celebrateCorrect(teamId)
-        quizMotion.recordOutcome(teamId, true)
-      } else {
-        quizMotion.shake('question')
-      }
+      quizMotion.shake('question')
     }
     if (board.value) board.value.teams = result.teams
     await loadBoard()
@@ -214,7 +203,6 @@ function closeModal() {
   activeQuestion.value = null
   shownAnswer.value = null
   awarded.value = false
-  retryNote.value = null
 }
 
 onBeforeUnmount(stopAnswerTimer)
@@ -546,15 +534,6 @@ onBeforeUnmount(stopAnswerTimer)
               </p>
             </MotionScale>
 
-            <MotionScale
-              :show="!shownAnswer && !!retryNote"
-              :duration="DURATIONS.base"
-            >
-              <p class="text-lg font-bold text-center text-warning bg-warning/10 rounded-lg py-3 mb-4">
-                {{ retryNote }}
-              </p>
-            </MotionScale>
-
             <div
               v-if="!awarded && !shownAnswer"
               class="text-center mb-4"
@@ -568,12 +547,6 @@ onBeforeUnmount(stopAnswerTimer)
               >
                 إظهار الإجابة
               </UButton>
-              <p
-                v-if="activeQuestion?.blockManualReveal"
-                class="text-xs text-muted mt-1"
-              >
-                يملك الفريق محاولتين قبل إظهار الإجابة
-              </p>
             </div>
 
             <template #footer>

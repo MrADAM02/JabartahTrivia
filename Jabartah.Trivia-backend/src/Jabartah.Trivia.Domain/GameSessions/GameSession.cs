@@ -26,7 +26,6 @@ public class GameQuestionState
     public DateTime RevealedAt { get; private set; }
     public Guid? PowerUpTeamId { get; private set; }
     public PowerUpType? ActivePowerUp { get; private set; }
-    public bool AttemptFailed { get; private set; }
     public bool IsResolved { get; private set; }
 
     private GameQuestionState() { } // EF Core
@@ -43,27 +42,15 @@ public class GameQuestionState
             ActivePowerUp = activePowerUp
         };
 
-    // Returns true if a retry is now allowed (question stays unresolved).
-    public bool RecordAttempt(Guid? winningTeamId)
+    // A single judgment always fully resolves the question -- the host reports the
+    // outcome once (nobody has to click "لم يُجب" a second time for a retry pass).
+    public void RecordAttempt(Guid? winningTeamId)
     {
         if (IsResolved)
             throw new InvalidOperationException("This question was already resolved.");
 
-        if (winningTeamId is not null)
-        {
-            WonByTeamId = winningTeamId;
-            IsResolved = true;
-            return false;
-        }
-
-        if (ActivePowerUp == PowerUpType.TwoAnswers && !AttemptFailed)
-        {
-            AttemptFailed = true;
-            return true;
-        }
-
+        WonByTeamId = winningTeamId;
         IsResolved = true;
-        return false;
     }
 
     public bool AwardsDoublePoints(Guid teamId) => ActivePowerUp == PowerUpType.DoublePoints && PowerUpTeamId == teamId;
@@ -167,15 +154,14 @@ public class GameSession
         PendingTimerDebuffTeamId = _teams.First(t => t.Id != teamId).Id;
     }
 
-    // Returns the retry team id if a retry is now pending, else null (question fully resolved).
-    public Guid? AwardPoints(Guid questionId, Guid? winningTeamId, int points)
+    public void AwardPoints(Guid questionId, Guid? winningTeamId, int points)
     {
         var state = _questionStates.FirstOrDefault(q => q.QuestionId == questionId)
             ?? throw new InvalidOperationException("Question was not revealed in this session yet.");
         if (winningTeamId is not null && winningTeamId != state.TurnTeamId)
             throw new ArgumentException("Only the team whose turn it was on this question can be credited.");
 
-        var canRetry = state.RecordAttempt(winningTeamId);
+        state.RecordAttempt(winningTeamId);
 
         if (winningTeamId is { } teamId)
         {
@@ -184,14 +170,9 @@ public class GameSession
             team.AddPoints(state.AwardsDoublePoints(teamId) ? points * 2 : points);
         }
 
-        if (!canRetry)
-        {
-            if (state.TurnTeamId == PendingTimerDebuffTeamId)
-                PendingTimerDebuffTeamId = null;
-            CurrentTurnTeamId = _teams.First(t => t.Id != state.TurnTeamId).Id;
-        }
-
-        return canRetry ? state.PowerUpTeamId : null;
+        if (state.TurnTeamId == PendingTimerDebuffTeamId)
+            PendingTimerDebuffTeamId = null;
+        CurrentTurnTeamId = _teams.First(t => t.Id != state.TurnTeamId).Id;
     }
 
     public void Complete()

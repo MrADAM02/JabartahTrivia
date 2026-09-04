@@ -59,7 +59,6 @@ public class GameQuestionStateConfiguration : IEntityTypeConfiguration<GameQuest
         builder.Property(s => s.RevealedAt).IsRequired();
         builder.Property(s => s.PowerUpTeamId);
         builder.Property(s => s.ActivePowerUp).HasConversion<string>().HasMaxLength(20);
-        builder.Property(s => s.AttemptFailed).IsRequired();
         builder.Property(s => s.IsResolved).IsRequired();
         builder.HasIndex(s => new { s.GameSessionId, s.QuestionId }).IsUnique();
     }
