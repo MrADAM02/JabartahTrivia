@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const modes = [
-  { to: '/trivia/setup', icon: '🎯', title: 'لعبة الأسئلة', description: 'اختر فئة ونقطة، ومن يجيب أولاً يفوز بالنقاط' },
+  { to: '/trivia/setup', icon: '🎯', title: 'لعبة الأسئلة', description: 'اختر فئة ونقطة، والفريق صاحب الدور يجيب ويفوز بالنقاط' },
   { to: '/password/setup', icon: '🤫', title: 'كلمة السر', description: 'لمّح لفريقك بكلمة واحدة ليخمنوا الكلمة السرية' },
-  { to: '/ranking/setup', icon: '🔢', title: 'رتبها', description: 'رتب البطاقات بالترتيب الصحيح قبل الوقت' },
+  { to: '/ranking/setup', icon: '🔢', title: 'رتبها', description: 'رتب البطاقات بالترتيب الصحيح واجمع النقاط' },
   { to: '/top100/setup', icon: '💯', title: 'تحدي الـ100', description: 'خمّنوا عناصر القائمة، والعنصر الأصعب يستحق أكثر' }
 ]
 

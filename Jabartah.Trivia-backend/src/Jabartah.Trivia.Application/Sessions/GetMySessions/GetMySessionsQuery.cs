@@ -53,7 +53,9 @@ public class GetMySessionsHandler(IApplicationDbContext db) : IQueryHandler<GetM
         all.AddRange(ranking.Select(s => Map("Ranking", s.Id, s.CreatedAt, s.CompletedAt, s.Teams)));
         all.AddRange(top100.Select(s => Map("Top100", s.Id, s.CreatedAt, s.CompletedAt, s.Teams)));
 
-        return all.OrderByDescending(s => s.CreatedAt).ToList();
+        // History is capped to the most recent 20 across all 4 modes -- a personal
+        // play log, not something that needs real pagination at this app's scale.
+        return all.OrderByDescending(s => s.CreatedAt).Take(20).ToList();
     }
 
     private static MySessionDto Map(string mode, Guid id, DateTime createdAt, DateTime? completedAt, List<MyTeamDto> teams)
