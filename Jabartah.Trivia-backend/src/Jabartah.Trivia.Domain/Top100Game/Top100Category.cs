@@ -5,15 +5,17 @@ public class Top100Category
     public Guid Id { get; private set; }
     public string Name { get; private set; } = default!;
     public string? Icon { get; private set; }
+    public string? Description { get; private set; }
 
     private Top100Category() { } // EF Core
 
-    public static Top100Category Create(string name, string? icon = null) =>
+    public static Top100Category Create(string name, string? icon = null, string? description = null) =>
         new()
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Icon = icon
+            Icon = icon,
+            Description = description
         };
 
     public void Rename(string name) => Name = name;

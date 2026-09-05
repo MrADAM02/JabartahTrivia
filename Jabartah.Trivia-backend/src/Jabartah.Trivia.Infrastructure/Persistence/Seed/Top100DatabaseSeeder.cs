@@ -8,7 +8,7 @@ public static class Top100DatabaseSeeder
 {
     private record SeedTop100Item(string Label, List<string>? AlternateSpellings);
     private record SeedTop100List(string Title, List<SeedTop100Item> Items);
-    private record SeedTop100Category(string CategoryName, string? Icon, List<SeedTop100List> Lists);
+    private record SeedTop100Category(string CategoryName, string? Icon, string? Description, List<SeedTop100List> Lists);
 
     public static async Task SeedAsync(AppDbContext db)
     {
@@ -24,7 +24,7 @@ public static class Top100DatabaseSeeder
 
         foreach (var sc in seedCategories)
         {
-            var category = Top100Category.Create(sc.CategoryName, sc.Icon);
+            var category = Top100Category.Create(sc.CategoryName, sc.Icon, sc.Description);
             db.Top100Categories.Add(category);
 
             foreach (var sl in sc.Lists)

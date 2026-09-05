@@ -277,6 +277,8 @@ export interface Top100CategoryDto {
   id: string
   name: string
   icon: string | null
+  description: string | null
+  itemCount: number
 }
 
 export interface Top100TeamDto {

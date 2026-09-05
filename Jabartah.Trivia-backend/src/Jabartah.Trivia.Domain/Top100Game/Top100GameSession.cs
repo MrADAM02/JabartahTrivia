@@ -129,8 +129,8 @@ public class Top100GameSession
 
         if (teamsList.Count != 2)
             throw new InvalidOperationException("تحدي الـ100 يتطلب فريقين بالضبط.");
-        if (categories.Count == 0)
-            throw new InvalidOperationException("الجلسة تحتاج فئة واحدة على الأقل.");
+        if (categories.Count != 1)
+            throw new InvalidOperationException("تحدي الـ100 يتطلب اختيار فئة واحدة بالضبط.");
         if (!AllowedGuessesPerTeam.Contains(guessesPerTeam))
             throw new InvalidOperationException($"عدد الإجابات لكل فريق يجب أن يكون بين {AllowedGuessesPerTeam.Min()} و {AllowedGuessesPerTeam.Max()}.");
 
