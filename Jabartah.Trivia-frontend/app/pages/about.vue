@@ -41,5 +41,20 @@ useSeoMeta({ title: 'من نحن - جولة' })
         <li>• تجربة مصممة للشاشة المشتركة والمجالس، سهلة الفهم من أول جولة</li>
       </ul>
     </UCard>
+
+    <UCard class="text-center">
+      <h2 class="text-xl font-bold text-green-900 dark:text-green-100 mb-2">
+        تواصل معنا
+      </h2>
+      <p class="text-muted mb-2">
+        عندك ملاحظة أو اقتراح؟ راسلنا:
+      </p>
+      <a
+        href="mailto:adamgame340@gmail.com"
+        class="font-bold text-primary hover:underline"
+      >
+        تواصل معنا
+      </a>
+    </UCard>
   </div>
 </template>

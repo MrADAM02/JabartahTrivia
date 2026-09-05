@@ -177,6 +177,7 @@ public class GameSession
 
     public void Complete()
     {
+        if (Status == GameSessionStatus.Completed) return;
         Status = GameSessionStatus.Completed;
         CompletedAt = DateTime.UtcNow;
     }

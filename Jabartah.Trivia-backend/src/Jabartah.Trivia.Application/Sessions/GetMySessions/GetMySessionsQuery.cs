@@ -21,27 +21,29 @@ public class GetMySessionsHandler(IApplicationDbContext db) : IQueryHandler<GetM
 {
     public async Task<List<MySessionDto>> Handle(GetMySessionsQuery query, CancellationToken ct)
     {
+        // Only sessions that actually finished (early-ended or naturally completed) belong in
+        // history -- a session someone just walked away from mid-game never gets a CompletedAt.
         var trivia = await db.GameSessions
             .Include(s => s.Teams)
-            .Where(s => s.UserId == query.UserId)
+            .Where(s => s.UserId == query.UserId && s.CompletedAt != null)
             .Select(s => new { s.Id, s.CreatedAt, s.CompletedAt, Teams = s.Teams.Select(t => new MyTeamDto(t.Name, t.Score)).ToList() })
             .ToListAsync(ct);
 
         var password = await db.PasswordGameSessions
             .Include(s => s.Teams)
-            .Where(s => s.UserId == query.UserId)
+            .Where(s => s.UserId == query.UserId && s.CompletedAt != null)
             .Select(s => new { s.Id, s.CreatedAt, s.CompletedAt, Teams = s.Teams.Select(t => new MyTeamDto(t.Name, t.Score)).ToList() })
             .ToListAsync(ct);
 
         var ranking = await db.RankingGameSessions
             .Include(s => s.Teams)
-            .Where(s => s.UserId == query.UserId)
+            .Where(s => s.UserId == query.UserId && s.CompletedAt != null)
             .Select(s => new { s.Id, s.CreatedAt, s.CompletedAt, Teams = s.Teams.Select(t => new MyTeamDto(t.Name, t.Score)).ToList() })
             .ToListAsync(ct);
 
         var top100 = await db.Top100GameSessions
             .Include(s => s.Teams)
-            .Where(s => s.UserId == query.UserId)
+            .Where(s => s.UserId == query.UserId && s.CompletedAt != null)
             .Select(s => new { s.Id, s.CreatedAt, s.CompletedAt, Teams = s.Teams.Select(t => new MyTeamDto(t.Name, t.Score)).ToList() })
             .ToListAsync(ct);
 

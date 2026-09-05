@@ -8,7 +8,7 @@ definePageMeta({ layout: false })
 const route = useRoute()
 const sessionId = route.params.id as string
 
-const { getTop100Session, startNextTop100Round, submitGuess } = useApi()
+const { getTop100Session, startNextTop100Round, submitGuess, endTop100GameSession } = useApi()
 const quizMotion = useQuizMotion()
 const { motionTier } = useResponsiveMotion()
 const { pieces: confettiPieces } = useConfettiBurst()
@@ -119,11 +119,24 @@ const showCelebration = ref(false)
 watch(() => session.value?.status, (status) => {
   if (status === 'Completed' && motionTier.value === 'full') showCelebration.value = true
 })
+
+async function handleEndGame() {
+  guessText.value = ''
+  lastFeedback.value = null
+  try {
+    session.value = await endTop100GameSession(sessionId)
+  } catch {
+    errorMessage.value = 'تعذر إنهاء اللعبة.'
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-    <GameExitBar />
+    <GameExitBar
+      :show-end-game="session?.status !== 'Completed'"
+      @end="handleEndGame"
+    />
 
     <div
       v-if="loading"

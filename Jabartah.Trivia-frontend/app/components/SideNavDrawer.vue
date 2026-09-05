@@ -59,7 +59,7 @@ function logout() {
               class="size-6"
             />
           </button>
-          <span class="text-xl font-black text-green-900 dark:text-green-100">
+          <span class="font-display text-xl font-black text-green-900 dark:text-green-100">
             جولة
           </span>
         </div>

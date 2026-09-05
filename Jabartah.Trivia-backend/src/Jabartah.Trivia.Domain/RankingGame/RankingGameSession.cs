@@ -161,6 +161,7 @@ public class RankingGameSession
 
     public void Complete()
     {
+        if (Status == RankingGameSessionStatus.Completed) return;
         Status = RankingGameSessionStatus.Completed;
         CompletedAt = DateTime.UtcNow;
     }

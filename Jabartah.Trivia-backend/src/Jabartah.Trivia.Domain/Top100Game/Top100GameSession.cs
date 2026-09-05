@@ -196,6 +196,7 @@ public class Top100GameSession
 
     public void Complete()
     {
+        if (Status == Top100GameSessionStatus.Completed) return;
         Status = Top100GameSessionStatus.Completed;
         CompletedAt = DateTime.UtcNow;
     }

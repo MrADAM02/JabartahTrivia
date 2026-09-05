@@ -1,5 +1,6 @@
 using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Application.RankingGame.CreateRankingGameSession;
+using Jabartah.Trivia.Application.RankingGame.EndGame;
 using Jabartah.Trivia.Application.RankingGame.GetSession;
 using Jabartah.Trivia.Application.RankingGame.RevealPosition;
 using Jabartah.Trivia.Application.RankingGame.StartNextRound;
@@ -29,6 +30,9 @@ public static class RankingGameEndpoints
         group.MapPost("/{id:guid}/rounds/{roundId:guid}/reveal-position", async (
                 Guid id, Guid roundId, RevealPositionRequest body, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new RevealRankingPositionCommand(id, roundId, body.TeamId), ct)));
+
+        group.MapPost("/{id:guid}/end", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
+            Results.Ok(await dispatcher.Send(new EndRankingGameSessionCommand(id), ct)));
     }
 
     public record RevealPositionRequest(Guid TeamId);

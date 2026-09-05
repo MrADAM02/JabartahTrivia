@@ -1,5 +1,6 @@
 using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Application.Top100Game.CreateTop100GameSession;
+using Jabartah.Trivia.Application.Top100Game.EndGame;
 using Jabartah.Trivia.Application.Top100Game.GetSession;
 using Jabartah.Trivia.Application.Top100Game.StartNextRound;
 using Jabartah.Trivia.Application.Top100Game.SubmitGuess;
@@ -24,6 +25,9 @@ public static class Top100GameEndpoints
         group.MapPost("/{id:guid}/rounds/{roundId:guid}/guess", async (
                 Guid id, Guid roundId, SubmitGuessRequest body, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new SubmitGuessCommand(id, roundId, body.GuessText), ct)));
+
+        group.MapPost("/{id:guid}/end", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
+            Results.Ok(await dispatcher.Send(new EndTop100GameSessionCommand(id), ct)));
     }
 
     public record SubmitGuessRequest(string GuessText);

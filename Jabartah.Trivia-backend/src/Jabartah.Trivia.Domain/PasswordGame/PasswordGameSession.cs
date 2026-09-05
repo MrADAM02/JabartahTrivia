@@ -155,6 +155,7 @@ public class PasswordGameSession
 
     public void Complete()
     {
+        if (Status == PasswordGameSessionStatus.Completed) return;
         Status = PasswordGameSessionStatus.Completed;
         CompletedAt = DateTime.UtcNow;
     }

@@ -11,6 +11,7 @@ import type {
   CreatePasswordGameSessionResult,
   CreateRankingGameSessionResult,
   CustomQuestionInput,
+  EndGameSessionResult,
   IssueRevealTokenResult,
   MyCategoryDetailDto,
   MySessionDto,
@@ -115,6 +116,9 @@ export function useApi() {
       { method: 'POST' }
     )
 
+  const endGameSession = (gameSessionId: string) =>
+    api<EndGameSessionResult>(`/api/game-sessions/${gameSessionId}/end`, { method: 'POST' })
+
   // Password game (كلمة السر)
 
   const listPasswordCategories = () => api<PasswordCategoryDto[]>('/api/password-categories')
@@ -146,6 +150,9 @@ export function useApi() {
   const useExtraTime = (sessionId: string, teamId: string) =>
     api<UseExtraTimeResult>(`/api/password-sessions/${sessionId}/teams/${teamId}/extra-time`, { method: 'POST' })
 
+  const endPasswordGameSession = (sessionId: string) =>
+    api<PasswordSessionDto>(`/api/password-sessions/${sessionId}/end`, { method: 'POST' })
+
   // Ranking game (رتبها)
 
   const listRankingCategories = () => api<RankingCategoryDto[]>('/api/ranking-categories')
@@ -174,6 +181,9 @@ export function useApi() {
       body: { teamId }
     })
 
+  const endRankingGameSession = (sessionId: string) =>
+    api<RankingSessionDto>(`/api/ranking-sessions/${sessionId}/end`, { method: 'POST' })
+
   // تحدي الـ100
 
   const listTop100Categories = () => api<Top100CategoryDto[]>('/api/top100-categories')
@@ -196,6 +206,9 @@ export function useApi() {
       body: { guessText }
     })
 
+  const endTop100GameSession = (sessionId: string) =>
+    api<Top100SessionDto>(`/api/top100-sessions/${sessionId}/end`, { method: 'POST' })
+
   return {
     register,
     login,
@@ -213,6 +226,7 @@ export function useApi() {
     awardPoints,
     revealAnswer,
     activateTimerDebuff,
+    endGameSession,
     listPasswordCategories,
     createPasswordGameSession,
     getPasswordSession,
@@ -221,16 +235,19 @@ export function useApi() {
     resolvePasswordRound,
     consumeRevealToken,
     useExtraTime,
+    endPasswordGameSession,
     listRankingCategories,
     createRankingGameSession,
     getRankingSession,
     startNextRankingRound,
     submitRankingRound,
     revealRankingPosition,
+    endRankingGameSession,
     listTop100Categories,
     createTop100GameSession,
     getTop100Session,
     startNextTop100Round,
-    submitGuess
+    submitGuess,
+    endTop100GameSession
   }
 }

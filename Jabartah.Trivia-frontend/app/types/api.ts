@@ -127,6 +127,10 @@ export interface AwardPointsResult {
   correctAnswer: string | null
 }
 
+export interface EndGameSessionResult {
+  teams: TeamDto[]
+}
+
 // Password game (كلمة السر)
 
 export interface PasswordCategoryDto {

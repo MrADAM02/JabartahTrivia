@@ -29,10 +29,12 @@ function logout() {
 <template>
   <div class="min-h-screen flex flex-col bg-white dark:bg-gray-950">
     <header class="sticky top-0 z-40 bg-green-900 text-white shadow-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4"
+      >
         <NuxtLink
           to="/"
-          class="text-2xl font-black text-gold-400 shrink-0"
+          class="font-display text-2xl font-black text-gold-400 shrink-0"
         >
           جولة
         </NuxtLink>
@@ -77,7 +79,9 @@ function logout() {
               :show="accountMenuOpen"
               :duration="DURATIONS.fast"
             >
-              <div class="absolute inset-s-0 mt-2 w-44 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-lg border border-green-100 dark:border-gray-800 overflow-hidden">
+              <div
+                class="absolute inset-s-0 mt-2 w-44 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-lg border border-green-100 dark:border-gray-800 overflow-hidden"
+              >
                 <NuxtLink
                   to="/account"
                   class="block px-4 py-2 text-sm font-bold hover:bg-green-50 dark:hover:bg-gray-800"
@@ -122,9 +126,11 @@ function logout() {
     </main>
 
     <footer class="bg-green-900 text-white mt-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm"
+      >
         <div>
-          <p class="text-xl font-black text-gold-400 mb-2">
+          <p class="font-display text-xl font-black text-gold-400 mb-2">
             جولة
           </p>
           <p class="text-white/70">
@@ -170,9 +176,17 @@ function logout() {
           >
             الأسئلة الشائعة
           </NuxtLink>
+          <a
+            href="mailto:adamgame340@gmail.com"
+            class="block mt-2 text-white/70 hover:text-gold-300"
+          >
+            تواصل معنا
+          </a>
         </div>
       </div>
-      <div class="border-t border-green-800 text-center text-xs text-white/60 py-3">
+      <div
+        class="border-t border-green-800 text-center text-xs text-white/60 py-3"
+      >
         © {{ new Date().getFullYear() }} جولة. جميع الحقوق محفوظة.
       </div>
     </footer>

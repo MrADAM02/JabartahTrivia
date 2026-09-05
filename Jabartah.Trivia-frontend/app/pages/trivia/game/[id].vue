@@ -11,7 +11,7 @@ const COUNTDOWN_EMPHASIS_THRESHOLD = 5
 const route = useRoute()
 const gameSessionId = route.params.id as string
 
-const { getBoard, selectQuestion, awardPoints, revealAnswer, activateTimerDebuff } = useApi()
+const { getBoard, selectQuestion, awardPoints, revealAnswer, activateTimerDebuff, endGameSession } = useApi()
 const quizMotion = useQuizMotion()
 const { motionTier } = useResponsiveMotion()
 
@@ -86,6 +86,8 @@ onMounted(loadBoard)
 const allRevealed = computed(() =>
   !!board.value && board.value.categories.every(c => c.cells.every(cell => cell.isRevealed))
 )
+const endedEarly = ref(false)
+const gameOver = computed(() => allRevealed.value || endedEarly.value)
 
 const winnerResult = computed(() => board.value ? getWinner(board.value.teams) : null)
 
@@ -130,8 +132,22 @@ async function activateTimerDebuffPowerUp(teamId: string) {
 const showCelebration = ref(false)
 const { pieces: confettiPieces } = useConfettiBurst()
 watch(allRevealed, (isDone) => {
-  if (isDone && motionTier.value === 'full') showCelebration.value = true
+  if (!isDone) return
+  if (motionTier.value === 'full') showCelebration.value = true
+  // Persists the win -- GameSession.Complete() otherwise never gets called for trivia.
+  endGameSession(gameSessionId).catch(() => {})
 })
+
+async function handleEndGame() {
+  closeModal()
+  try {
+    const result = await endGameSession(gameSessionId)
+    if (board.value) board.value.teams = result.teams
+    endedEarly.value = true
+  } catch {
+    errorMessage.value = 'تعذر إنهاء اللعبة.'
+  }
+}
 
 async function openQuestion(questionId: string, pointValue: number) {
   if (!board.value) return
@@ -210,7 +226,10 @@ onBeforeUnmount(stopAnswerTimer)
 
 <template>
   <div class="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-    <GameExitBar />
+    <GameExitBar
+      :show-end-game="!gameOver"
+      @end="handleEndGame"
+    />
     <div class="p-3 sm:p-6 flex flex-col gap-4 flex-1">
       <div
         v-if="loading"
@@ -231,7 +250,7 @@ onBeforeUnmount(stopAnswerTimer)
 
       <template v-else-if="board">
         <div
-          v-if="allRevealed"
+          v-if="gameOver"
           class="flex-1 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden"
         >
           <span

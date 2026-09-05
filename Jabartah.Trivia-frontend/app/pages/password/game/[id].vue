@@ -14,7 +14,7 @@ const sessionId = route.params.id as string
 
 const EXTRA_TIME_SECONDS = 15
 
-const { getPasswordSession, startNextPasswordRound, issueRevealToken, resolvePasswordRound, useExtraTime } = useApi()
+const { getPasswordSession, startNextPasswordRound, issueRevealToken, resolvePasswordRound, useExtraTime, endPasswordGameSession } = useApi()
 const quizMotion = useQuizMotion()
 const { motionTier } = useResponsiveMotion()
 const { pieces: confettiPieces } = useConfettiBurst()
@@ -144,11 +144,23 @@ const showCelebration = ref(false)
 watch(() => session.value?.status, (status) => {
   if (status === 'Completed' && motionTier.value === 'full') showCelebration.value = true
 })
+
+async function handleEndGame() {
+  resetRoundUi()
+  try {
+    session.value = await endPasswordGameSession(sessionId)
+  } catch {
+    errorMessage.value = 'تعذر إنهاء اللعبة.'
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-    <GameExitBar />
+    <GameExitBar
+      :show-end-game="session?.status !== 'Completed'"
+      @end="handleEndGame"
+    />
     <div class="p-3 sm:p-6 flex flex-col gap-6 flex-1">
       <div
         v-if="loading"

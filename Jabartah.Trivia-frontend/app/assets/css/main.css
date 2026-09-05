@@ -1,8 +1,58 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Self-hosted -- see public/fonts/thmanyah/LICENSE.pdf. Free for commercial
+   use; the license just disallows redistributing the raw font files as a
+   standalone download, which this (bundled into the app) isn't. */
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah/sans/thmanyahsans-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah/sans/thmanyahsans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah/sans/thmanyahsans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah/sans/thmanyahsans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah/sans/thmanyahsans-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyah/serif-display/thmanyahserifdisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyah/serif-display/thmanyahserifdisplay-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
+
 @theme static {
-  --font-sans: 'Tajawal', 'Segoe UI', sans-serif;
+  --font-sans: 'Thmanyah Sans', 'Tajawal', 'Segoe UI', sans-serif;
+  /* Big moments only -- page h1s, winner screens, and the "جولة" wordmark
+     wherever it appears as brand identity (see .font-display below).
+     Everything else stays on --font-sans. */
+  --font-display: 'Thmanyah Serif Display', 'Thmanyah Sans', 'Tajawal', sans-serif;
 
   /* Dark forest green — primary. Used for the header/footer background,
      primary buttons/links, and card borders. */
@@ -150,6 +200,14 @@
   transform: translate(-50%, -50%);
   background: radial-gradient(circle, color-mix(in srgb, var(--color-gold-400) 7%, transparent), transparent 70%);
   pointer-events: none;
+}
+
+/* Every page has exactly one h1 (its hero title) -- this alone covers page
+   heroes, setup screens' colored header bands, and each game mode's winner
+   announcement. .font-display exists alongside it for the "جولة" wordmark
+   spots that aren't h1s (header/footer/drawer/exit-bar). */
+h1, .font-display {
+  font-family: var(--font-display);
 }
 
 @media (prefers-reduced-motion: reduce) {
