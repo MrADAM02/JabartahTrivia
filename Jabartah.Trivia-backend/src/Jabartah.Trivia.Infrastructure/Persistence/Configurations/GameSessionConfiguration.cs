@@ -46,6 +46,10 @@ public class GameSessionConfiguration : IEntityTypeConfiguration<GameSession>
         // Selected category IDs for this session -- stored as a Postgres uuid[] array
         // via EF Core's primitive collection support (EF Core 8+).
         builder.PrimitiveCollection(s => s.CategoryIds).UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // The one question chosen per (category, point value) cell for this session's board --
+        // same uuid[] primitive-collection technique as CategoryIds above.
+        builder.PrimitiveCollection(s => s.BoardQuestionIds).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 

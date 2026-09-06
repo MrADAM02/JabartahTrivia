@@ -31,8 +31,12 @@ public class GetBoardHandler(IApplicationDbContext db) : IQueryHandler<GetBoardQ
             .Where(c => session.CategoryIds.Contains(c.Id))
             .ToListAsync(ct);
 
+        // Filtered to this session's own persisted picks (BoardQuestionIds) -- a category can
+        // have several candidate questions per point value in the DB, but exactly one was
+        // chosen per (category, point value) at session-creation time, so this always yields
+        // exactly 5 cells per category regardless of how many candidates exist.
         var questions = await db.Questions
-            .Where(q => session.CategoryIds.Contains(q.CategoryId))
+            .Where(q => session.CategoryIds.Contains(q.CategoryId) && session.BoardQuestionIds.Contains(q.Id))
             .ToListAsync(ct);
 
         var stateByQuestionId = session.QuestionStates.ToDictionary(s => s.QuestionId);

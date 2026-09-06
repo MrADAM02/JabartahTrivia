@@ -1,5 +1,6 @@
 using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Domain.GameSessions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Jabartah.Trivia.Application.GameSessions.CreateGameSession;
 
@@ -16,7 +17,27 @@ public class CreateGameSessionHandler(IApplicationDbContext db, ICurrentUserAcce
 {
     public async Task<CreateGameSessionResult> Handle(CreateGameSessionCommand command, CancellationToken ct)
     {
-        var session = GameSession.Create(command.Teams.Select(t => (t.Name, t.Color, t.Icon)), command.CategoryIds);
+        // A category can now hold several candidate questions per point value (up to 5) --
+        // pick exactly one per (category, point value) here, once, so the board stays stable
+        // for this session's lifetime instead of re-randomizing on every GetBoard call.
+        var candidates = await db.Questions
+            .Where(q => command.CategoryIds.Contains(q.CategoryId))
+            .Select(q => new { q.Id, q.CategoryId, q.PointValue })
+            .ToListAsync(ct);
+
+        var boardQuestionIds = new List<Guid>();
+        foreach (var categoryId in command.CategoryIds)
+        {
+            foreach (var pointValue in new[] { 100, 200, 300, 400, 500 })
+            {
+                var pool = candidates.Where(q => q.CategoryId == categoryId && q.PointValue == pointValue).ToList();
+                if (pool.Count == 0)
+                    throw new InvalidOperationException("إحدى الفئات المختارة لا تحتوي على سؤال لأحد مستويات النقاط.");
+                boardQuestionIds.Add(pool[Random.Shared.Next(pool.Count)].Id);
+            }
+        }
+
+        var session = GameSession.Create(command.Teams.Select(t => (t.Name, t.Color, t.Icon)), command.CategoryIds, boardQuestionIds);
         session.AttachOwner(currentUser.UserId); // null for guest play -- endpoint has no auth requirement
         session.Start(); // MVP: no separate "waiting room" step, start immediately
 

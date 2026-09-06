@@ -74,12 +74,24 @@ public class GameSession
     private readonly List<Guid> _categoryIds = new();
     public IReadOnlyCollection<Guid> CategoryIds => _categoryIds.AsReadOnly();
 
+    // The specific question chosen (once, at creation time) for each of the 30
+    // (category, point value) cells on this session's board -- lets a category have
+    // several candidate questions per point value in the DB while the board itself
+    // always shows exactly one per cell, stable for the session's lifetime. See
+    // CreateGameSessionCommand for where the random pick actually happens (needs DB
+    // access, so it can't live here in the domain layer).
+    private readonly List<Guid> _boardQuestionIds = new();
+    public IReadOnlyCollection<Guid> BoardQuestionIds => _boardQuestionIds.AsReadOnly();
+
     private readonly List<GameQuestionState> _questionStates = new();
     public IReadOnlyCollection<GameQuestionState> QuestionStates => _questionStates.AsReadOnly();
 
     private GameSession() { } // EF Core
 
-    public static GameSession Create(IEnumerable<(string Name, string? Color, string? Icon)> teams, IEnumerable<Guid> categoryIds)
+    public static GameSession Create(
+        IEnumerable<(string Name, string? Color, string? Icon)> teams,
+        IEnumerable<Guid> categoryIds,
+        IEnumerable<Guid> boardQuestionIds)
     {
         var teamsList = teams.ToList();
         var categories = categoryIds.ToList();
@@ -102,6 +114,7 @@ public class GameSession
         session.CurrentTurnTeamId = session._teams.First(t => t.TurnOrder == 0).Id;
 
         session._categoryIds.AddRange(categories);
+        session._boardQuestionIds.AddRange(boardQuestionIds);
         return session;
     }
 
