@@ -53,7 +53,7 @@ public class RankingRound
 // Aggregate root: two teams alternate turns arranging shuffled cards into the correct order.
 public class RankingGameSession
 {
-    public static readonly int[] AllowedRoundsPerTeam = [2, 4, 6];
+    public static readonly int[] AllowedRoundsPerTeam = [2, 4, 6, 8, 10];
 
     public int RoundsPerTeam { get; private set; }
 
