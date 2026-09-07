@@ -1,0 +1,44 @@
+services:
+  api:
+    image: ghcr.io/mradam02/jabartahtrivia-api:latest
+    container_name: jabartah-trivia-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5002:8080"
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - jabartah-trivia-net
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: jabartah-trivia-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - jabartah-trivia-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - jabartah-trivia-net
+    # Deliberately no `ports:` mapping -- reachable only inside jabartah-trivia-net
+    # by service name "postgres". The unrelated jabartah-postgres container on this
+    # same server publicly exposes 0.0.0.0:5432; do not repeat that here.
+
+networks:
+  jabartah-trivia-net:
+    driver: bridge
+
+volumes:
+  jabartah-trivia-postgres-data:

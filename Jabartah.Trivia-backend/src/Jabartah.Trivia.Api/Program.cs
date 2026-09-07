@@ -42,11 +42,15 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
 var allowedFrontendPort = builder.Configuration["Cors:AllowedFrontendPort"] ?? "3030";
+var extraAllowedOrigins = (builder.Configuration["Cors:ExtraAllowedOrigins"] ?? string.Empty)
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.SetIsOriginAllowed(origin => IsAllowedOrigin(origin, allowedFrontendPort))
+        policy.SetIsOriginAllowed(origin =>
+                  IsAllowedOrigin(origin, allowedFrontendPort) || extraAllowedOrigins.Contains(origin))
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -76,9 +80,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
 
-    // Dev convenience only: applies pending migrations + seeds Arabic sample content.
-    using var scope = app.Services.CreateScope();
+// Runs in every environment: this is the only way categories/questions/words/lists
+// ever get into the database (no admin CRUD exists), and every seeder is idempotent
+// (each bails out early if its table is already populated), so this is safe to run
+// on every startup, not just the first one.
+using (var scope = app.Services.CreateScope())
+{
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     await DatabaseSeeder.SeedAsync(db);

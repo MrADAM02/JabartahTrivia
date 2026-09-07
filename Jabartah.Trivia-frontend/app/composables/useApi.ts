@@ -36,8 +36,10 @@ import type {
 } from '~/types/api'
 
 export function useApi() {
-  const { public: { apiPort } } = useRuntimeConfig()
-  const apiBase = computed(() => `http://${window.location.hostname}:${apiPort}`)
+  const { public: { apiPort, apiBase: configuredApiBase } } = useRuntimeConfig()
+  const apiBase = computed(() =>
+    configuredApiBase || `http://${window.location.hostname}:${apiPort}`
+  )
   const { token } = useAuth()
 
   const api = $fetch.create({

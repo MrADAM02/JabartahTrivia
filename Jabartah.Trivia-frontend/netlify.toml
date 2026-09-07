@@ -1,0 +1,15 @@
+[build]
+  command = "npm run generate"
+  publish = ".output/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Nitro's static preset (ssr: false) generates a dedicated 200.html as the SPA
+# fallback for hosts like this one -- serve it for any route the static build
+# didn't prerender (e.g. dynamic ids like /trivia/game/<id>), letting Vue
+# Router take over client-side.
+[[redirects]]
+  from = "/*"
+  to = "/200.html"
+  status = 200
