@@ -1,6 +1,10 @@
 [build]
   command = "npm run generate"
-  publish = ".output/public"
+  # Netlify auto-detects Nuxt and swaps in its own "netlify-static" Nitro
+  # preset for it, which outputs to dist/ -- NOT .output/public (that's only
+  # what plain `nuxt generate` produces outside Netlify's build environment,
+  # confirmed via a local test run before this preset-switch was known).
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
