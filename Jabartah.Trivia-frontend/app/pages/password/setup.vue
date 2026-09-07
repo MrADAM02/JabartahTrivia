@@ -80,9 +80,15 @@ async function startGame() {
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6 pb-14 space-y-8">
       <section class="space-y-3">
-        <h2 class="text-lg font-bold text-green-900 dark:text-green-100">
-          اختر الفئات
-        </h2>
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-green-900 dark:text-green-100">
+            اختر الفئات
+          </h2>
+          <CategoryCountBadge
+            :selected="selectedCategoryIds.length"
+            :max="null"
+          />
+        </div>
         <CategoryPickerGrid
           :categories="categories"
           :selected-ids="selectedCategoryIds"
@@ -100,6 +106,11 @@ async function startGame() {
         </template>
 
         <div class="space-y-6">
+          <CategorySelectionPills
+            :items="categories.filter(c => selectedCategoryIds.includes(c.id))"
+            @remove="toggleCategory"
+          />
+
           <section class="text-center">
             <p class="text-sm font-bold text-muted mb-2">
               عدد الجولات لكل فريق

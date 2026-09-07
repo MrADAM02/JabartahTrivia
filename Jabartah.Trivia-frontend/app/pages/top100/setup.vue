@@ -23,6 +23,12 @@ function openInfo(category: Top100CategoryDto) {
   infoModalOpen.value = true
 }
 
+// Radio semantics: clicking any card always selects it directly, no need
+// to deselect the current one first (see CategoryPickerGrid's selectionMode).
+function selectCategory(id: string) {
+  selectedCategoryId.value = id
+}
+
 const steps = [
   { title: 'اختر القائمة', description: 'اختر قائمة واحدة من قوائم التحدي' },
   { title: 'كوّن فريقك', description: 'سمّ فريقيك واختر لون وأيقونة كل فريق' },
@@ -82,63 +88,46 @@ async function startGame() {
 
     <div class="max-w-3xl mx-auto px-4 sm:px-6 pb-14 space-y-8">
       <section class="space-y-3">
-        <h2 class="text-lg font-bold text-green-900 dark:text-green-100">
-          اختر القائمة
-        </h2>
-
-        <div
-          v-if="categoriesLoading"
-          class="grid grid-cols-1 sm:grid-cols-2 gap-3"
-        >
-          <div
-            v-for="i in 4"
-            :key="i"
-            class="flex flex-col items-center gap-2 rounded-xl p-4 ring-1 ring-green-100 dark:ring-gray-800"
-          >
-            <USkeleton class="size-9 rounded-full" />
-            <USkeleton class="h-4 w-32" />
-            <USkeleton class="h-5 w-16 rounded-full" />
-          </div>
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-green-900 dark:text-green-100">
+            اختر القائمة
+          </h2>
+          <CategoryCountBadge
+            :selected="selectedCategoryId ? 1 : 0"
+            :max="1"
+          />
         </div>
 
-        <div
-          v-else
-          class="grid grid-cols-1 sm:grid-cols-2 gap-3"
+        <CategoryPickerGrid
+          :categories="categories"
+          :selected-ids="selectedCategoryId ? [selectedCategoryId] : []"
+          :max="1"
+          variant="list"
+          selection-mode="radio"
+          :loading="categoriesLoading"
+          @toggle="selectCategory"
         >
-          <div
-            v-for="category in categories"
-            :key="category.id"
-            role="button"
-            tabindex="0"
-            class="relative flex flex-col items-center gap-2 rounded-xl p-4 ring-1 transition-all cursor-pointer text-center"
-            :class="selectedCategoryId === category.id
-              ? 'ring-2 ring-primary bg-primary/10'
-              : 'ring-green-100 dark:ring-gray-800 hover:ring-primary/50'"
-            @click="selectedCategoryId = category.id"
-            @keydown.enter="selectedCategoryId = category.id"
-          >
+          <template #extra="{ category }">
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              class="font-bold"
+            >
+              {{ (category as Top100CategoryDto).itemCount }} عنصر
+            </UBadge>
             <button
               type="button"
               class="absolute top-2 inset-s-2 size-7 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-muted hover:text-primary transition-colors"
               aria-label="معلومات القائمة"
-              @click.stop="openInfo(category)"
+              @click.stop="openInfo(category as Top100CategoryDto)"
             >
               <UIcon
                 name="i-lucide-info"
                 class="size-4"
               />
             </button>
-            <span class="text-4xl">{{ category.icon ?? '📚' }}</span>
-            <span class="font-bold">{{ category.name }}</span>
-            <UBadge
-              color="neutral"
-              variant="subtle"
-              class="font-bold"
-            >
-              {{ category.itemCount }} عنصر
-            </UBadge>
-          </div>
-        </div>
+          </template>
+        </CategoryPickerGrid>
       </section>
 
       <UCard>
@@ -149,6 +138,12 @@ async function startGame() {
         </template>
 
         <div class="space-y-6">
+          <CategorySelectionPills
+            v-if="selectedCategoryId"
+            :items="categories.filter(c => c.id === selectedCategoryId)"
+            @remove="selectedCategoryId = null"
+          />
+
           <section class="text-center">
             <p class="text-sm font-bold text-muted mb-2">
               عدد الإجابات لكل فريق

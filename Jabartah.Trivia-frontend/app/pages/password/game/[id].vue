@@ -16,8 +16,6 @@ const EXTRA_TIME_SECONDS = 15
 
 const { getPasswordSession, startNextPasswordRound, issueRevealToken, resolvePasswordRound, useExtraTime, endPasswordGameSession } = useApi()
 const quizMotion = useQuizMotion()
-const { motionTier } = useResponsiveMotion()
-const { pieces: confettiPieces } = useConfettiBurst()
 
 const session = ref<PasswordSessionDto | null>(null)
 const loading = ref(true)
@@ -140,11 +138,6 @@ const progressPercent = computed(() => {
   return Math.round((session.value.roundsPlayed / session.value.totalRounds) * 100)
 })
 
-const showCelebration = ref(false)
-watch(() => session.value?.status, (status) => {
-  if (status === 'Completed' && motionTier.value === 'full') showCelebration.value = true
-})
-
 async function handleEndGame() {
   resetRoundUi()
   try {
@@ -180,70 +173,11 @@ async function handleEndGame() {
       />
 
       <template v-else-if="session">
-        <div
+        <WinnerScreen
           v-if="session.status === 'Completed'"
-          class="flex-1 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden"
-        >
-          <span
-            v-if="showCelebration"
-            class="pointer-events-none absolute inset-0"
-            aria-hidden="true"
-          >
-            <span
-              v-for="piece in confettiPieces"
-              :key="piece.id"
-              class="confetti-piece"
-              :style="{
-                'left': `${piece.left}%`,
-                'width': `${piece.size}px`,
-                'height': `${piece.shape === 'circle' ? piece.size : piece.size * 1.6}px`,
-                'borderRadius': piece.shape === 'circle' ? '50%' : '2px',
-                'backgroundColor': piece.color,
-                'animationDuration': `${piece.duration}s`,
-                'animationDelay': `${piece.delay}s`,
-                '--drift': `${piece.drift}px`,
-                '--spin': piece.spin
-              }"
-            />
-          </span>
-
-          <MotionScale
-            :show="true"
-            :duration="DURATIONS.slow"
-          >
-            <template v-if="winnerResult?.isDraw">
-              <p class="text-2xl sm:text-3xl font-bold text-muted">
-                🤝 تعادل
-              </p>
-              <h1 class="text-4xl sm:text-6xl font-black text-primary">
-                {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-              </h1>
-              <p class="text-3xl sm:text-4xl font-bold">
-                {{ winnerResult.topScore }} نقطة
-              </p>
-            </template>
-            <template v-else>
-              <p class="text-2xl sm:text-3xl font-bold text-muted">
-                🎉 الفائز 🎉
-              </p>
-              <h1
-                class="text-5xl sm:text-7xl font-black text-primary"
-                :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
-              >
-                {{ winnerResult?.winners[0]?.name }}
-              </h1>
-              <p class="text-3xl sm:text-4xl font-bold">
-                {{ winnerResult?.winners[0]?.score }} نقطة
-              </p>
-            </template>
-          </MotionScale>
-          <UButton
-            size="xl"
-            to="/"
-          >
-            لعبة جديدة
-          </UButton>
-        </div>
+          :winner="winnerResult"
+          :teams="session.teams"
+        />
 
         <template v-else>
           <div class="flex flex-wrap justify-center gap-3 sm:gap-6">

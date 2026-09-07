@@ -13,7 +13,6 @@ const gameSessionId = route.params.id as string
 
 const { getBoard, selectQuestion, awardPoints, revealAnswer, activateTimerDebuff, endGameSession } = useApi()
 const quizMotion = useQuizMotion()
-const { motionTier } = useResponsiveMotion()
 
 const board = ref<BoardDto | null>(null)
 const loading = ref(true)
@@ -129,11 +128,8 @@ async function activateTimerDebuffPowerUp(teamId: string) {
   }
 }
 
-const showCelebration = ref(false)
-const { pieces: confettiPieces } = useConfettiBurst()
 watch(allRevealed, (isDone) => {
   if (!isDone) return
-  if (motionTier.value === 'full') showCelebration.value = true
   // Persists the win -- GameSession.Complete() otherwise never gets called for trivia.
   endGameSession(gameSessionId).catch(() => {})
 })
@@ -249,70 +245,11 @@ onBeforeUnmount(stopAnswerTimer)
       />
 
       <template v-else-if="board">
-        <div
+        <WinnerScreen
           v-if="gameOver"
-          class="flex-1 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden"
-        >
-          <span
-            v-if="showCelebration"
-            class="pointer-events-none absolute inset-0"
-            aria-hidden="true"
-          >
-            <span
-              v-for="piece in confettiPieces"
-              :key="piece.id"
-              class="confetti-piece"
-              :style="{
-                'left': `${piece.left}%`,
-                'width': `${piece.size}px`,
-                'height': `${piece.shape === 'circle' ? piece.size : piece.size * 1.6}px`,
-                'borderRadius': piece.shape === 'circle' ? '50%' : '2px',
-                'backgroundColor': piece.color,
-                'animationDuration': `${piece.duration}s`,
-                'animationDelay': `${piece.delay}s`,
-                '--drift': `${piece.drift}px`,
-                '--spin': piece.spin
-              }"
-            />
-          </span>
-
-          <MotionScale
-            :show="true"
-            :duration="DURATIONS.slow"
-          >
-            <template v-if="winnerResult?.isDraw">
-              <p class="text-2xl sm:text-3xl font-bold text-muted">
-                🤝 تعادل
-              </p>
-              <h1 class="text-4xl sm:text-6xl font-black text-primary">
-                {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-              </h1>
-              <p class="text-3xl sm:text-4xl font-bold">
-                {{ winnerResult.topScore }} نقطة
-              </p>
-            </template>
-            <template v-else>
-              <p class="text-2xl sm:text-3xl font-bold text-muted">
-                🎉 الفائز 🎉
-              </p>
-              <h1
-                class="text-5xl sm:text-7xl font-black text-primary"
-                :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
-              >
-                {{ winnerResult?.winners[0]?.name }}
-              </h1>
-              <p class="text-3xl sm:text-4xl font-bold">
-                {{ winnerResult?.winners[0]?.score }} نقطة
-              </p>
-            </template>
-          </MotionScale>
-          <UButton
-            size="xl"
-            to="/"
-          >
-            لعبة جديدة
-          </UButton>
-        </div>
+          :winner="winnerResult"
+          :teams="board.teams"
+        />
 
         <template v-else>
           <div class="flex flex-wrap justify-center gap-3 sm:gap-6">

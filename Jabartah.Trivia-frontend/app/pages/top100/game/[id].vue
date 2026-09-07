@@ -10,8 +10,6 @@ const sessionId = route.params.id as string
 
 const { getTop100Session, startNextTop100Round, submitGuess, endTop100GameSession } = useApi()
 const quizMotion = useQuizMotion()
-const { motionTier } = useResponsiveMotion()
-const { pieces: confettiPieces } = useConfettiBurst()
 
 const session = ref<Top100SessionDto | null>(null)
 const loading = ref(true)
@@ -115,11 +113,6 @@ const progressPercent = computed(() => {
   return Math.round((discoveredItems.value.length / pending.itemCount) * 100)
 })
 
-const showCelebration = ref(false)
-watch(() => session.value?.status, (status) => {
-  if (status === 'Completed' && motionTier.value === 'full') showCelebration.value = true
-})
-
 async function handleEndGame() {
   guessText.value = ''
   lastFeedback.value = null
@@ -158,121 +151,59 @@ async function handleEndGame() {
 
     <template v-else-if="session">
       <!-- session complete: winner + full answers comparison -->
-      <div
+      <WinnerScreen
         v-if="session.status === 'Completed'"
-        class="flex-1 p-4 sm:p-6 space-y-8 relative overflow-hidden"
+        :winner="winnerResult"
+        :teams="session.teams"
       >
-        <span
-          v-if="showCelebration"
-          class="pointer-events-none absolute inset-0"
-          aria-hidden="true"
-        >
-          <span
-            v-for="piece in confettiPieces"
-            :key="piece.id"
-            class="confetti-piece"
-            :style="{
-              'left': `${piece.left}%`,
-              'width': `${piece.size}px`,
-              'height': `${piece.shape === 'circle' ? piece.size : piece.size * 1.6}px`,
-              'borderRadius': piece.shape === 'circle' ? '50%' : '2px',
-              'backgroundColor': piece.color,
-              'animationDuration': `${piece.duration}s`,
-              'animationDelay': `${piece.delay}s`,
-              '--drift': `${piece.drift}px`,
-              '--spin': piece.spin
-            }"
-          />
-        </span>
-
-        <MotionScale
-          :show="true"
-          :duration="DURATIONS.slow"
-        >
-          <div class="flex flex-col items-center gap-3 text-center">
-            <template v-if="winnerResult?.isDraw">
-              <p class="text-2xl sm:text-3xl font-bold text-muted">
-                🤝 تعادل
-              </p>
-              <h1 class="text-4xl sm:text-6xl font-black text-primary">
-                {{ winnerResult.winners.map(w => w.name).join(' و ') }}
-              </h1>
-              <p class="text-3xl sm:text-4xl font-bold">
-                {{ winnerResult.topScore }} نقطة
-              </p>
-            </template>
-            <template v-else>
-              <p class="text-2xl sm:text-3xl font-bold text-muted">
-                🎉 الفائز 🎉
-              </p>
-              <h1
-                class="text-5xl sm:text-7xl font-black text-primary"
-                :style="{ color: winnerResult?.winners[0]?.color ?? undefined }"
-              >
-                {{ winnerResult?.winners[0]?.name }}
-              </h1>
-              <p class="text-3xl sm:text-4xl font-bold">
-                {{ winnerResult?.winners[0]?.score }} نقطة
-              </p>
-            </template>
-          </div>
-        </MotionScale>
-
-        <UCard
+        <template
           v-if="session.completedRound"
-          class="max-w-3xl mx-auto w-full"
+          #summary
         >
-          <template #header>
-            <p class="text-center font-bold text-lg text-green-900 dark:text-green-100">
-              ملخص الإجابات
-            </p>
-            <p class="text-center text-sm text-muted">
-              {{ session.completedRound.listTitle }}
-            </p>
-          </template>
+          <UCard class="max-w-3xl mx-auto w-full">
+            <template #header>
+              <p class="text-center font-bold text-lg text-green-900 dark:text-green-100">
+                ملخص الإجابات
+              </p>
+              <p class="text-center text-sm text-muted">
+                {{ session.completedRound.listTitle }}
+              </p>
+            </template>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div
-              v-for="team in session.teams"
-              :key="team.id"
-            >
-              <UBadge
-                class="mb-2 font-bold"
-                :style="{ backgroundColor: team.color ?? undefined, color: 'white' }"
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div
+                v-for="team in session.teams"
+                :key="team.id"
               >
-                {{ team.name }} — {{ guessesForTeam(session.completedRound.guesses, team.id).filter(g => g.matched).length }} صحيحة
-              </UBadge>
-              <ol class="space-y-1">
-                <li
-                  v-for="g in guessesForTeam(session.completedRound.guesses, team.id)"
-                  :key="g.sequenceNumber"
-                  class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
-                  :class="g.matched ? 'bg-primary/10' : 'bg-error/10'"
+                <UBadge
+                  class="mb-2 font-bold"
+                  :style="{ backgroundColor: team.color ?? undefined, color: 'white' }"
                 >
-                  <span v-if="g.matched">✅</span>
-                  <span v-else>❌</span>
-                  <span class="flex-1">{{ g.matched ? g.matchedLabel : g.guessText }}</span>
-                  <span
-                    v-if="g.matched"
-                    class="font-bold text-primary"
+                  {{ team.name }} — {{ guessesForTeam(session.completedRound.guesses, team.id).filter(g => g.matched).length }} صحيحة
+                </UBadge>
+                <ol class="space-y-1">
+                  <li
+                    v-for="g in guessesForTeam(session.completedRound.guesses, team.id)"
+                    :key="g.sequenceNumber"
+                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
+                    :class="g.matched ? 'bg-primary/10' : 'bg-error/10'"
                   >
-                    #{{ g.matchedPosition }}
-                  </span>
-                </li>
-              </ol>
+                    <span v-if="g.matched">✅</span>
+                    <span v-else>❌</span>
+                    <span class="flex-1">{{ g.matched ? g.matchedLabel : g.guessText }}</span>
+                    <span
+                      v-if="g.matched"
+                      class="font-bold text-primary"
+                    >
+                      #{{ g.matchedPosition }}
+                    </span>
+                  </li>
+                </ol>
+              </div>
             </div>
-          </div>
-        </UCard>
-
-        <div class="text-center">
-          <UButton
-            size="xl"
-            to="/"
-          >
-            لعبة جديدة
-          </UButton>
-        </div>
-      </div>
+          </UCard>
+        </template>
+      </WinnerScreen>
 
       <!-- not started yet -->
       <div

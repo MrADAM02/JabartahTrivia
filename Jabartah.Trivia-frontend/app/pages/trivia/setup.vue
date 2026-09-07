@@ -49,6 +49,15 @@ function toggleCategory(id: string) {
   selectedCategoryIds.value.push(id)
 }
 
+// Pills need to resolve a selected id against whichever list it actually
+// came from -- selection persists across tab switches, so a pill for a
+// تصنيفاتي category must still render correctly while the "الفئات" tab is active.
+const selectedCategories = computed(() =>
+  selectedCategoryIds.value
+    .map(id => categories.value.find(c => c.id === id) ?? myCategories.value.find(c => c.id === id))
+    .filter((c): c is CategoryDto => !!c)
+)
+
 const canStart = computed(
   () =>
     teams.value.every(t => t.name.trim().length > 0)
@@ -95,9 +104,10 @@ async function startGame() {
           <h2 class="text-lg font-bold text-green-900 dark:text-green-100">
             اختر الفئات
           </h2>
-          <p class="text-sm text-muted">
-            {{ selectedCategoryIds.length }} من 6
-          </p>
+          <CategoryCountBadge
+            :selected="selectedCategoryIds.length"
+            :max="6"
+          />
         </div>
 
         <div class="flex gap-2 border-b border-green-100 dark:border-gray-800">
@@ -151,6 +161,11 @@ async function startGame() {
         </template>
 
         <div class="space-y-4">
+          <CategorySelectionPills
+            :items="selectedCategories"
+            @remove="toggleCategory"
+          />
+
           <TeamSetupCard
             v-model="teams[0]!"
             label="اسم الفريق الأول"
