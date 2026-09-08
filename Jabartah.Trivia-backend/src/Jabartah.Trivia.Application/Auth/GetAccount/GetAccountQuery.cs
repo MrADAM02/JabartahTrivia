@@ -5,7 +5,7 @@ namespace Jabartah.Trivia.Application.Auth.GetAccount;
 
 public record GetAccountQuery(Guid UserId) : IQuery<AccountDto>;
 
-public record AccountDto(string Name, string Email, int GamesPlayedCount);
+public record AccountDto(string Name, string Email, string Role, int GamesPlayedCount);
 
 public class GetAccountHandler(IApplicationDbContext db) : IQueryHandler<GetAccountQuery, AccountDto>
 {
@@ -20,6 +20,6 @@ public class GetAccountHandler(IApplicationDbContext db) : IQueryHandler<GetAcco
             + await db.RankingGameSessions.CountAsync(s => s.UserId == query.UserId, ct)
             + await db.Top100GameSessions.CountAsync(s => s.UserId == query.UserId, ct);
 
-        return new AccountDto(user.Name, user.Email, gamesPlayedCount);
+        return new AccountDto(user.Name, user.Email, user.Role.ToString(), gamesPlayedCount);
     }
 }

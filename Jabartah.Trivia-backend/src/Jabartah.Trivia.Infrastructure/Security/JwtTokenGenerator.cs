@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Jabartah.Trivia.Application.Abstractions;
+using Jabartah.Trivia.Domain.Users;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -9,7 +10,7 @@ namespace Jabartah.Trivia.Infrastructure.Security;
 
 public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerator
 {
-    public string Generate(Guid userId, string email, string name)
+    public string Generate(Guid userId, string email, string name, UserRole role)
     {
         var jwtSection = configuration.GetSection("Jwt");
         var key = jwtSection["Key"] ?? throw new InvalidOperationException("Missing 'Jwt:Key'.");
@@ -21,7 +22,8 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Name, name)
+            new Claim(ClaimTypes.Name, name),
+            new Claim(ClaimTypes.Role, role.ToString())
         };
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));

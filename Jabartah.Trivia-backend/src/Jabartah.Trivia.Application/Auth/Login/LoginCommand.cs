@@ -18,7 +18,7 @@ public class LoginHandler(IApplicationDbContext db, IPasswordHasher passwordHash
         if (user is null || !passwordHasher.Verify(user.PasswordHash, command.Password))
             throw new KeyNotFoundException("بيانات الدخول غير صحيحة.");
 
-        var token = jwtTokenGenerator.Generate(user.Id, user.Email, user.Name);
-        return new AuthResult(token, user.Id, user.Name, user.Email);
+        var token = jwtTokenGenerator.Generate(user.Id, user.Email, user.Name, user.Role);
+        return new AuthResult(token, user.Id, user.Name, user.Email, user.Role.ToString());
     }
 }

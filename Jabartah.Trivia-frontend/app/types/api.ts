@@ -5,11 +5,13 @@ export interface AuthResult {
   userId: string
   name: string
   email: string
+  role: 'User' | 'Admin'
 }
 
 export interface AccountDto {
   name: string
   email: string
+  role: 'User' | 'Admin'
   gamesPlayedCount: number
 }
 
@@ -352,4 +354,117 @@ export interface SubmitGuessResult {
   nextTurnTeamName: string
   sessionComplete: boolean
   teams: Top100TeamDto[]
+}
+
+// Admin panel
+
+export interface ModeStatsDto {
+  total: number
+  completed: number
+  inProgress: number
+}
+
+export interface TopCategoryDto {
+  categoryId: string
+  name: string
+  icon: string | null
+  timesPlayed: number
+}
+
+export interface DashboardStatsDto {
+  totalUsers: number
+  totalGames: number
+  completedGames: number
+  trivia: ModeStatsDto
+  password: ModeStatsDto
+  ranking: ModeStatsDto
+  top100: ModeStatsDto
+  topCategories: TopCategoryDto[]
+}
+
+export interface AdminCategoryDto {
+  id: string
+  name: string
+  icon: string | null
+  questionCount: number
+}
+
+export interface AdminQuestionDto {
+  id: string
+  pointValue: number
+  prompt: string
+  answer: string
+  mediaUrl: string | null
+}
+
+// Admin: كلمة السر content
+
+export interface AdminPasswordCategoryDto {
+  id: string
+  name: string
+  icon: string | null
+  wordCount: number
+}
+
+export interface AdminWordDto {
+  id: string
+  word: string
+}
+
+// Admin: رتبها content
+
+export interface AdminRankingCategoryDto {
+  id: string
+  name: string
+  icon: string | null
+  listCount: number
+}
+
+export interface AdminRankingListDto {
+  id: string
+  title: string
+  itemCount: number
+}
+
+export interface AdminRankingListItemDto {
+  id: string
+  label: string
+  correctPosition: number
+}
+
+export interface AdminRankingListDetailDto {
+  id: string
+  title: string
+  categoryId: string
+  items: AdminRankingListItemDto[]
+}
+
+// Admin: تحدي الـ100 content
+
+export interface AdminTop100CategoryDto {
+  id: string
+  name: string
+  icon: string | null
+  description: string | null
+  listCount: number
+}
+
+export interface AdminTop100ListDto {
+  id: string
+  title: string
+  itemCount: number
+}
+
+export interface AdminTop100ListItemDto {
+  id: string
+  label: string
+  position: number
+  alternateSpellings: string[]
+}
+
+export interface AdminTop100ListDetailDto {
+  id: string
+  title: string
+  categoryId: string
+  items: AdminTop100ListItemDto[]
 }

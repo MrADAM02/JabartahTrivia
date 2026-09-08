@@ -1,6 +1,8 @@
+using Jabartah.Trivia.Domain.Users;
+
 namespace Jabartah.Trivia.Application.Abstractions;
 
 public interface IJwtTokenGenerator
 {
-    string Generate(Guid userId, string email, string name);
+    string Generate(Guid userId, string email, string name, UserRole role);
 }

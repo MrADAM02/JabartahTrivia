@@ -22,4 +22,13 @@ public class RankingListItem
             CorrectPosition = correctPosition
         };
     }
+
+    public void UpdateDetails(string label, int correctPosition)
+    {
+        if (string.IsNullOrWhiteSpace(label)) throw new ArgumentException("Label is required.", nameof(label));
+        if (correctPosition <= 0) throw new ArgumentException("Correct position must be positive.", nameof(correctPosition));
+
+        Label = label;
+        CorrectPosition = correctPosition;
+    }
 }

@@ -89,6 +89,14 @@ function logout() {
                 >
                   حسابي
                 </NuxtLink>
+                <NuxtLink
+                  v-if="user?.role === 'Admin'"
+                  to="/admin"
+                  class="block px-4 py-2 text-sm font-bold hover:bg-green-50 dark:hover:bg-gray-800"
+                  @click="accountMenuOpen = false"
+                >
+                  لوحة التحكم
+                </NuxtLink>
                 <button
                   class="w-full text-start px-4 py-2 text-sm font-bold text-error hover:bg-green-50 dark:hover:bg-gray-800"
                   @click="logout"

@@ -19,4 +19,10 @@ public class PasswordWord
             Word = word
         };
     }
+
+    public void UpdateDetails(string word)
+    {
+        if (string.IsNullOrWhiteSpace(word)) throw new ArgumentException("Word is required.", nameof(word));
+        Word = word;
+    }
 }

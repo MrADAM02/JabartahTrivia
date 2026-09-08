@@ -17,4 +17,13 @@ public class RankingCategory
         };
 
     public void Rename(string name) => Name = name;
+
+    public void UpdateDetails(string name, string? icon)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفئة مطلوب.", nameof(name));
+
+        Name = name;
+        Icon = icon;
+    }
 }

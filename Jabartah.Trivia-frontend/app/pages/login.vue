@@ -17,7 +17,7 @@ async function submit() {
   loading.value = true
   try {
     const result = await login(email.value.trim(), password.value)
-    setSession(result.token, { id: result.userId, name: result.name, email: result.email })
+    setSession(result.token, { id: result.userId, name: result.name, email: result.email, role: result.role })
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     await navigateTo(redirect)
   } catch {

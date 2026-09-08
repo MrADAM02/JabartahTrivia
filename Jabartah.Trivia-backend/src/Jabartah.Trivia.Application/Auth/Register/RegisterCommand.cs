@@ -6,7 +6,7 @@ namespace Jabartah.Trivia.Application.Auth.Register;
 
 public record RegisterCommand(string Name, string Email, string Password) : ICommand<AuthResult>;
 
-public record AuthResult(string Token, Guid UserId, string Name, string Email);
+public record AuthResult(string Token, Guid UserId, string Name, string Email, string Role);
 
 public class RegisterHandler(IApplicationDbContext db, IPasswordHasher passwordHasher, IJwtTokenGenerator jwtTokenGenerator)
     : ICommandHandler<RegisterCommand, AuthResult>
@@ -23,7 +23,7 @@ public class RegisterHandler(IApplicationDbContext db, IPasswordHasher passwordH
         db.Users.Add(user);
         await db.SaveChangesAsync(ct);
 
-        var token = jwtTokenGenerator.Generate(user.Id, user.Email, user.Name);
-        return new AuthResult(token, user.Id, user.Name, user.Email);
+        var token = jwtTokenGenerator.Generate(user.Id, user.Email, user.Name, user.Role);
+        return new AuthResult(token, user.Id, user.Name, user.Email, user.Role.ToString());
     }
 }

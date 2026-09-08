@@ -2,6 +2,7 @@ export interface AuthUser {
   id: string
   name: string
   email: string
+  role: 'User' | 'Admin'
 }
 
 const STORAGE_KEY = 'jawla:auth'

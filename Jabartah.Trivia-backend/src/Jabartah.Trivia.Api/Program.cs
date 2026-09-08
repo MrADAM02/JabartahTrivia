@@ -130,5 +130,9 @@ app.MapTop100CategoryEndpoints();
 app.MapAuthEndpoints();
 app.MapSessionEndpoints();
 app.MapMyCategoryEndpoints();
+app.MapAdminEndpoints();
+app.MapAdminPasswordEndpoints();
+app.MapAdminRankingEndpoints();
+app.MapAdminTop100Endpoints();
 
 app.Run();

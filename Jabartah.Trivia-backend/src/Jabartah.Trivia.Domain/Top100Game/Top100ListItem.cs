@@ -30,4 +30,16 @@ public class Top100ListItem
 
         return item;
     }
+
+    public void UpdateDetails(string label, int position, IEnumerable<string>? alternateSpellings)
+    {
+        if (string.IsNullOrWhiteSpace(label)) throw new ArgumentException("Label is required.", nameof(label));
+        if (position <= 0) throw new ArgumentException("Position must be positive.", nameof(position));
+
+        Label = label;
+        Position = position;
+        _alternateSpellings.Clear();
+        if (alternateSpellings is not null)
+            _alternateSpellings.AddRange(alternateSpellings);
+    }
 }

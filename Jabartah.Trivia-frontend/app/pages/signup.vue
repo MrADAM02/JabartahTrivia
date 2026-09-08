@@ -22,7 +22,7 @@ async function submit() {
   loading.value = true
   try {
     const result = await register(name.value.trim(), email.value.trim(), password.value)
-    setSession(result.token, { id: result.userId, name: result.name, email: result.email })
+    setSession(result.token, { id: result.userId, name: result.name, email: result.email, role: result.role })
     await navigateTo('/')
   } catch {
     errorMessage.value = 'تعذر إنشاء الحساب. ربما هذا البريد الإلكتروني مستخدم بالفعل.'

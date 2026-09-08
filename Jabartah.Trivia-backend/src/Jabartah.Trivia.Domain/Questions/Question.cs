@@ -27,4 +27,16 @@ public class Question
             MediaUrl = mediaUrl
         };
     }
+
+    public void UpdateDetails(int pointValue, string prompt, string answer, string? mediaUrl)
+    {
+        if (pointValue <= 0) throw new ArgumentException("Point value must be positive.", nameof(pointValue));
+        if (string.IsNullOrWhiteSpace(prompt)) throw new ArgumentException("Prompt is required.", nameof(prompt));
+        if (string.IsNullOrWhiteSpace(answer)) throw new ArgumentException("Answer is required.", nameof(answer));
+
+        PointValue = pointValue;
+        Prompt = prompt;
+        Answer = answer;
+        MediaUrl = mediaUrl;
+    }
 }
