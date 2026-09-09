@@ -115,12 +115,15 @@ async function remove(id: string) {
         class="hover:ring-1 hover:ring-primary/40 transition-all"
       >
         <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
+          <NuxtLink
+            :to="`/my-categories/${category.id}`"
+            class="flex items-center gap-3 flex-1 min-w-0"
+          >
             <span class="text-3xl">{{ category.icon ?? '📚' }}</span>
-            <p class="font-bold">
+            <p class="font-bold truncate">
               {{ category.name }}
             </p>
-          </div>
+          </NuxtLink>
           <UButton
             icon="i-lucide-trash-2"
             color="error"

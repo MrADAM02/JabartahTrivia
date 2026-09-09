@@ -56,6 +56,12 @@ export interface CreateCustomCategoryResult {
   categoryId: string
 }
 
+export interface CustomQuestionUpdateInput {
+  questionId: string
+  prompt: string
+  answer: string
+}
+
 export interface MyCategoryQuestionDto {
   id: string
   pointValue: number

@@ -32,6 +32,7 @@ import type {
   Top100CategoryDto,
   Top100SessionDto,
   CreateTop100GameSessionResult,
+  CustomQuestionUpdateInput,
   UseExtraTimeResult
 } from '~/types/api'
 
@@ -75,6 +76,9 @@ export function useApi() {
 
   const getMyCategory = (categoryId: string) =>
     api<MyCategoryDetailDto>(`/api/my-categories/${categoryId}`)
+
+  const updateMyCategory = (categoryId: string, name: string, icon: string | null, questions: CustomQuestionUpdateInput[]) =>
+    api(`/api/my-categories/${categoryId}`, { method: 'PUT', body: { name, icon, questions } })
 
   const deleteMyCategory = (categoryId: string) =>
     api(`/api/my-categories/${categoryId}`, { method: 'DELETE' })
@@ -220,6 +224,7 @@ export function useApi() {
     listMyCategories,
     createMyCategory,
     getMyCategory,
+    updateMyCategory,
     deleteMyCategory,
     listCategories,
     createGameSession,
