@@ -39,3 +39,23 @@ jobs:
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull new image and restart on the VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/jabartah-trivia-backend
+            docker compose pull
+            docker compose up -d
+
+      - name: Smoke test
+        run: |
+          sleep 10
+          curl -sf https://trivia-api.jab-eri.org/api/categories > /dev/null
