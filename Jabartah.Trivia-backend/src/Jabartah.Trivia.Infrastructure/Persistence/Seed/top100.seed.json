@@ -2763,7 +2763,10 @@
             ]
           },
           {
-            "label": "Star Wars: Episode VIII – The Last Jedi"
+            "label": "Star Wars: Episode VIII – The Last Jedi",
+            "alternateSpellings": [
+              "ستار وورز: آخر الجاداي"
+            ]
           },
           {
             "label": "Harry Potter and the Deathly Hallows: Part II",
@@ -2772,7 +2775,10 @@
             ]
           },
           {
-            "label": "Jurassic World: Fallen Kingdom"
+            "label": "Jurassic World: Fallen Kingdom",
+            "alternateSpellings": [
+              "جوراسيك وورلد: المملكة الساقطة"
+            ]
           },
           {
             "label": "Frozen",
@@ -2829,7 +2835,10 @@
             ]
           },
           {
-            "label": "Spider-Man: Far From Home"
+            "label": "Spider-Man: Far From Home",
+            "alternateSpellings": [
+              "سبايدرمان: بعيدًا عن المنزل"
+            ]
           },
           {
             "label": "Captain Marvel",
@@ -2850,7 +2859,10 @@
             ]
           },
           {
-            "label": "Skyfall"
+            "label": "Skyfall",
+            "alternateSpellings": [
+              "سكاي فول"
+            ]
           },
           {
             "label": "Transformers: Age of Extinction",
@@ -2871,13 +2883,22 @@
             ]
           },
           {
-            "label": "Toy Story 4"
+            "label": "Toy Story 4",
+            "alternateSpellings": [
+              "توي ستوري 4"
+            ]
           },
           {
-            "label": "Star Wars: The Rise of Skywalker"
+            "label": "Star Wars: The Rise of Skywalker",
+            "alternateSpellings": [
+              "ستار وورز: صعود سكاي ووكر"
+            ]
           },
           {
-            "label": "Toy Story 3"
+            "label": "Toy Story 3",
+            "alternateSpellings": [
+              "توي ستوري 3"
+            ]
           },
           {
             "label": "Pirates of the Caribbean: Dead Man's Chest",
@@ -2904,7 +2925,10 @@
             ]
           },
           {
-            "label": "Star Wars: Episode I – The Phantom Menace"
+            "label": "Star Wars: Episode I – The Phantom Menace",
+            "alternateSpellings": [
+              "ستار وورز: التهديد الخفي"
+            ]
           },
           {
             "label": "Pirates of the Caribbean: On Stranger Tides",
@@ -2943,7 +2967,10 @@
             ]
           },
           {
-            "label": "Michael"
+            "label": "Michael",
+            "alternateSpellings": [
+              "مايكل"
+            ]
           },
           {
             "label": "Zootopia",
@@ -2958,7 +2985,10 @@
             ]
           },
           {
-            "label": "The Super Mario Galaxy Movie"
+            "label": "The Super Mario Galaxy Movie",
+            "alternateSpellings": [
+              "فيلم سوبر ماريو غالاكسي"
+            ]
           },
           {
             "label": "The Dark Knight",
@@ -2967,7 +2997,10 @@
             ]
           },
           {
-            "label": "Jurassic World: Dominion"
+            "label": "Jurassic World: Dominion",
+            "alternateSpellings": [
+              "جوراسيك وورلد: السيادة"
+            ]
           },
           {
             "label": "The Lion King (1994)",
@@ -3018,7 +3051,10 @@
             ]
           },
           {
-            "label": "The Hobbit: The Desolation of Smaug"
+            "label": "The Hobbit: The Desolation of Smaug",
+            "alternateSpellings": [
+              "الهوبيت: خراب سماوغ"
+            ]
           },
           {
             "label": "Doctor Strange in the Multiverse of Madness",
@@ -3033,16 +3069,28 @@
             ]
           },
           {
-            "label": "Harry Potter and the Deathly Hallows: Part I"
+            "label": "Harry Potter and the Deathly Hallows: Part I",
+            "alternateSpellings": [
+              "هاري بوتر ومقدسات الموت - الجزء الأول"
+            ]
           },
           {
-            "label": "The Hobbit: The Battle of the Five Armies"
+            "label": "The Hobbit: The Battle of the Five Armies",
+            "alternateSpellings": [
+              "الهوبيت: معركة الجيوش الخمسة"
+            ]
           },
           {
-            "label": "Minions: The Rise of Gru"
+            "label": "Minions: The Rise of Gru",
+            "alternateSpellings": [
+              "مينيونز: صعود جرو"
+            ]
           },
           {
-            "label": "Harry Potter and the Order of the Phoenix"
+            "label": "Harry Potter and the Order of the Phoenix",
+            "alternateSpellings": [
+              "هاري بوتر وجماعة العنقاء"
+            ]
           },
           {
             "label": "Finding Nemo",
@@ -3057,22 +3105,40 @@
             ]
           },
           {
-            "label": "The Lord of the Rings: The Two Towers"
+            "label": "The Lord of the Rings: The Two Towers",
+            "alternateSpellings": [
+              "سيد الخواتم: البرجان"
+            ]
           },
           {
-            "label": "Harry Potter and the Half-Blood Prince"
+            "label": "Harry Potter and the Half-Blood Prince",
+            "alternateSpellings": [
+              "هاري بوتر والأمير الهجين"
+            ]
           },
           {
-            "label": "Star Wars: Episode III – Revenge of the Sith"
+            "label": "Star Wars: Episode III – Revenge of the Sith",
+            "alternateSpellings": [
+              "ستار وورز: انتقام السيث"
+            ]
           },
           {
-            "label": "The Lord of the Rings: The Fellowship of the Ring"
+            "label": "The Lord of the Rings: The Fellowship of the Ring",
+            "alternateSpellings": [
+              "سيد الخواتم: رفقة الخاتم"
+            ]
           },
           {
-            "label": "Spider-Man 3"
+            "label": "Spider-Man 3",
+            "alternateSpellings": [
+              "سبايدرمان 3"
+            ]
           },
           {
-            "label": "Harry Potter and the Goblet of Fire"
+            "label": "Harry Potter and the Goblet of Fire",
+            "alternateSpellings": [
+              "هاري بوتر وكأس النار"
+            ]
           },
           {
             "label": "Ice Age: Dawn of the Dinosaurs",
@@ -3099,13 +3165,22 @@
             ]
           },
           {
-            "label": "Spectre"
+            "label": "Spectre",
+            "alternateSpellings": [
+              "سبيكتر"
+            ]
           },
           {
-            "label": "Spider-Man: Homecoming"
+            "label": "Spider-Man: Homecoming",
+            "alternateSpellings": [
+              "سبايدرمان: العودة للوطن"
+            ]
           },
           {
-            "label": "Harry Potter and the Chamber of Secrets"
+            "label": "Harry Potter and the Chamber of Secrets",
+            "alternateSpellings": [
+              "هاري بوتر وحجرة الأسرار"
+            ]
           },
           {
             "label": "Batman v Superman: Dawn of Justice",
@@ -3114,7 +3189,10 @@
             ]
           },
           {
-            "label": "Jurassic World Rebirth"
+            "label": "Jurassic World Rebirth",
+            "alternateSpellings": [
+              "جوراسيك وورلد: البعث"
+            ]
           },
           {
             "label": "Guardians of the Galaxy Vol. 2",
