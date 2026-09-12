@@ -18,8 +18,12 @@ public class RankingTeam
 
     private RankingTeam() { } // EF Core
 
-    public static RankingTeam Create(Guid rankingGameSessionId, string name, int turnOrder, string? color = null, string? icon = null) =>
-        new()
+    public static RankingTeam Create(Guid rankingGameSessionId, string name, int turnOrder, string? color = null, string? icon = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفريق مطلوب.", nameof(name));
+
+        return new RankingTeam
         {
             Id = Guid.NewGuid(),
             RankingGameSessionId = rankingGameSessionId,
@@ -29,6 +33,7 @@ public class RankingTeam
             Color = color,
             Icon = icon
         };
+    }
 
     public void AddPoints(int points) => Score += points;
 

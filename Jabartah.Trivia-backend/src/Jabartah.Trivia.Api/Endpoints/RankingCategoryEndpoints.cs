@@ -1,5 +1,6 @@
 using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Application.Categories.ListRankingCategories;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -9,6 +10,7 @@ public static class RankingCategoryEndpoints
     {
         app.MapGet("/api/ranking-categories", async (IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new ListRankingCategoriesQuery(), ct)))
-            .WithTags("RankingCategories");
+            .WithTags("RankingCategories")
+            .CacheOutput("categories");
     }
 }

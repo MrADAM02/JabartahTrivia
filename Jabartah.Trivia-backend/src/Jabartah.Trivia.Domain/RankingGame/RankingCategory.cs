@@ -8,13 +8,18 @@ public class RankingCategory
 
     private RankingCategory() { } // EF Core
 
-    public static RankingCategory Create(string name, string? icon = null) =>
-        new()
+    public static RankingCategory Create(string name, string? icon = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفئة مطلوب.", nameof(name));
+
+        return new RankingCategory
         {
             Id = Guid.NewGuid(),
             Name = name,
             Icon = icon
         };
+    }
 
     public void Rename(string name) => Name = name;
 

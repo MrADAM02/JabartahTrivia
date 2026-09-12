@@ -9,14 +9,19 @@ public class Top100Category
 
     private Top100Category() { } // EF Core
 
-    public static Top100Category Create(string name, string? icon = null, string? description = null) =>
-        new()
+    public static Top100Category Create(string name, string? icon = null, string? description = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفئة مطلوب.", nameof(name));
+
+        return new Top100Category
         {
             Id = Guid.NewGuid(),
             Name = name,
             Icon = icon,
             Description = description
         };
+    }
 
     public void Rename(string name) => Name = name;
 

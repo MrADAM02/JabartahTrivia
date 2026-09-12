@@ -51,6 +51,8 @@ function logout() {
         </nav>
 
         <div class="hidden md:flex items-center gap-3">
+          <DarkModeToggle class="text-white/90 hover:text-gold-300 transition-colors" />
+
           <UButton
             to="/"
             color="secondary"

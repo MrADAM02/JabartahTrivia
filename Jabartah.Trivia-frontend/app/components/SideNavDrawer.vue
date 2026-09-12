@@ -62,6 +62,7 @@ function logout() {
           <span class="font-display text-xl font-black text-green-900 dark:text-green-100">
             جولة
           </span>
+          <DarkModeToggle class="text-gray-500 dark:text-gray-400" />
         </div>
 
         <div class="p-4 shrink-0">

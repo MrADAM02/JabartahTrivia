@@ -1,5 +1,10 @@
 <script setup lang="ts">
 const { user, clearSession } = useAuth()
+const colorMode = useColorMode()
+
+function toggleColorMode() {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+}
 
 const navLinks = [
   { to: '/admin', label: 'الإحصائيات', icon: 'i-lucide-layout-dashboard' },
@@ -36,16 +41,19 @@ function logout() {
       >
         لوحة التحكم
       </NuxtLink>
-      <NuxtLink
-        to="/"
-        class="flex items-center gap-1 text-xs font-bold text-white/80"
-      >
-        <UIcon
-          name="i-lucide-arrow-right"
-          class="size-4"
-        />
-        الموقع
-      </NuxtLink>
+      <div class="flex items-center gap-3">
+        <DarkModeToggle class="text-white/80" />
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-1 text-xs font-bold text-white/80"
+        >
+          <UIcon
+            name="i-lucide-arrow-right"
+            class="size-4"
+          />
+          الموقع
+        </NuxtLink>
+      </div>
     </header>
 
     <!-- Desktop sidebar -->
@@ -89,7 +97,18 @@ function logout() {
         </NuxtLink>
       </nav>
 
-      <div class="px-3 py-4 border-t border-white/10">
+      <div class="px-3 py-4 border-t border-white/10 space-y-2">
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-bold text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+          @click="toggleColorMode"
+        >
+          <UIcon
+            :name="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
+            class="size-4"
+          />
+          {{ colorMode.value === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن' }}
+        </button>
         <div class="flex items-center justify-between px-3 py-2 text-xs text-white/60">
           <span class="truncate">{{ user?.name }}</span>
           <button

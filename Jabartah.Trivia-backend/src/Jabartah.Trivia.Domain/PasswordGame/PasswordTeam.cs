@@ -18,8 +18,12 @@ public class PasswordTeam
 
     private PasswordTeam() { } // EF Core
 
-    public static PasswordTeam Create(Guid passwordGameSessionId, string name, int turnOrder, string? color = null, string? icon = null) =>
-        new()
+    public static PasswordTeam Create(Guid passwordGameSessionId, string name, int turnOrder, string? color = null, string? icon = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفريق مطلوب.", nameof(name));
+
+        return new PasswordTeam
         {
             Id = Guid.NewGuid(),
             PasswordGameSessionId = passwordGameSessionId,
@@ -29,6 +33,7 @@ public class PasswordTeam
             Color = color,
             Icon = icon
         };
+    }
 
     public void AddPoints(int points) => Score += points;
 

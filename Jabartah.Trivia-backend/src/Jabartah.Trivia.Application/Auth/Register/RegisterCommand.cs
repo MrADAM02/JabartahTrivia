@@ -17,6 +17,11 @@ public class RegisterHandler(IApplicationDbContext db, IPasswordHasher passwordH
         if (await db.Users.AnyAsync(u => u.Email == normalizedEmail, ct))
             throw new InvalidOperationException("هذا البريد الإلكتروني مستخدم بالفعل.");
 
+        // Checked here, not in User.Create -- the domain only ever sees the already-hashed
+        // value, so it can't validate the raw password's length itself.
+        if (command.Password.Length < 8)
+            throw new ArgumentException("كلمة المرور يجب أن تتكون من 8 أحرف على الأقل.", nameof(command.Password));
+
         var passwordHash = passwordHasher.Hash(command.Password);
         var user = User.Create(command.Name, command.Email, passwordHash);
 

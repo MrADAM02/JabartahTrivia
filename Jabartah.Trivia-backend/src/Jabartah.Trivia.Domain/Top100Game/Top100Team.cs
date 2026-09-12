@@ -17,8 +17,12 @@ public class Top100Team
 
     private Top100Team() { } // EF Core
 
-    public static Top100Team Create(Guid top100GameSessionId, string name, int turnOrder, string? color = null, string? icon = null) =>
-        new()
+    public static Top100Team Create(Guid top100GameSessionId, string name, int turnOrder, string? color = null, string? icon = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفريق مطلوب.", nameof(name));
+
+        return new Top100Team
         {
             Id = Guid.NewGuid(),
             Top100GameSessionId = top100GameSessionId,
@@ -28,6 +32,7 @@ public class Top100Team
             Color = color,
             Icon = icon
         };
+    }
 
     public void AddPoints(int points) => Score += points;
 }

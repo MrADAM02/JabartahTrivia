@@ -1,5 +1,6 @@
 using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Application.Categories.ListPasswordCategories;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -9,6 +10,7 @@ public static class PasswordCategoryEndpoints
     {
         app.MapGet("/api/password-categories", async (IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new ListPasswordCategoriesQuery(), ct)))
-            .WithTags("PasswordCategories");
+            .WithTags("PasswordCategories")
+            .CacheOutput("categories");
     }
 }

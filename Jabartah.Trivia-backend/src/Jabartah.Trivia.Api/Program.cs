@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.RateLimiting;
 using Jabartah.Trivia.Api.Endpoints;
 using Jabartah.Trivia.Api.Security;
 using Jabartah.Trivia.Application;
@@ -9,6 +10,7 @@ using Jabartah.Trivia.Infrastructure;
 using Jabartah.Trivia.Infrastructure.Persistence;
 using Jabartah.Trivia.Infrastructure.Persistence.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -40,6 +42,31 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+
+// 5 requests/minute/IP on /api/auth -- generous enough for a mistyped password retry,
+// tight enough to blunt brute-force/credential-stuffing against login and register.
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, ct) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsync("طلبات كثيرة جدًا، حاول مرة أخرى بعد قليل.", ct);
+    };
+    options.AddFixedWindowLimiter("auth", o =>
+    {
+        o.PermitLimit = 5;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueLimit = 0;
+    });
+});
+
+// Content behind these 4 endpoints only ever changes through the admin panel, which is
+// infrequent -- a short TTL trades a sub-minute staleness window for zero invalidation
+// logic (no pipeline/behavior concept exists on the Dispatcher to hook that into anyway).
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("categories", p => p.Expire(TimeSpan.FromSeconds(45)));
+});
 
 var allowedFrontendPort = builder.Configuration["Cors:AllowedFrontendPort"] ?? "3030";
 var extraAllowedOrigins = (builder.Configuration["Cors:ExtraAllowedOrigins"] ?? string.Empty)
@@ -82,10 +109,10 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Runs in every environment: this is the only way categories/questions/words/lists
-// ever get into the database (no admin CRUD exists), and every seeder is idempotent
-// (each bails out early if its table is already populated), so this is safe to run
-// on every startup, not just the first one.
+// Runs in every environment: this is how categories/questions/words/lists get into a
+// freshly-created database on first boot (ongoing content management goes through the
+// admin panel instead). Every seeder is idempotent -- each bails out early if its table
+// is already populated -- so this is safe to run on every startup, not just the first one.
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -117,6 +144,8 @@ app.Use(async (context, next) =>
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
+app.UseOutputCache();
 
 app.MapGameSessionEndpoints();
 app.MapCategoryEndpoints();

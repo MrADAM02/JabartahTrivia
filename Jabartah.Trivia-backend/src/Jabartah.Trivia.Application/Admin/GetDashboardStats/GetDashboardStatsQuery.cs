@@ -30,28 +30,14 @@ public class GetDashboardStatsHandler(IApplicationDbContext db) : IQueryHandler<
     {
         var totalUsers = await db.Users.CountAsync(ct);
 
-        // Status is stored via HasConversion<string>() per mode, so counts are done per
-        // mode's own enum rather than casting to a shared int (which EF can't translate
-        // against a string-converted column).
-        var trivia = new ModeStatsDto(
-            await db.GameSessions.CountAsync(ct),
-            await db.GameSessions.CountAsync(s => s.Status == GameSessionStatus.Completed, ct),
-            await db.GameSessions.CountAsync(s => s.Status == GameSessionStatus.InProgress, ct));
-
-        var password = new ModeStatsDto(
-            await db.PasswordGameSessions.CountAsync(ct),
-            await db.PasswordGameSessions.CountAsync(s => s.Status == PasswordGameSessionStatus.Completed, ct),
-            await db.PasswordGameSessions.CountAsync(s => s.Status == PasswordGameSessionStatus.InProgress, ct));
-
-        var ranking = new ModeStatsDto(
-            await db.RankingGameSessions.CountAsync(ct),
-            await db.RankingGameSessions.CountAsync(s => s.Status == RankingGameSessionStatus.Completed, ct),
-            await db.RankingGameSessions.CountAsync(s => s.Status == RankingGameSessionStatus.InProgress, ct));
-
-        var top100 = new ModeStatsDto(
-            await db.Top100GameSessions.CountAsync(ct),
-            await db.Top100GameSessions.CountAsync(s => s.Status == Top100GameSessionStatus.Completed, ct),
-            await db.Top100GameSessions.CountAsync(s => s.Status == Top100GameSessionStatus.InProgress, ct));
+        // One grouped query per mode instead of 3 separate CountAsync calls each (12 round
+        // trips total before). Status is stored via HasConversion<string>() per mode, so this
+        // groups by the enum property itself rather than casting to a shared int (which EF
+        // can't translate against a string-converted column).
+        var trivia = await GetModeStatsAsync(db.GameSessions.Select(s => s.Status), GameSessionStatus.Completed, GameSessionStatus.InProgress, ct);
+        var password = await GetModeStatsAsync(db.PasswordGameSessions.Select(s => s.Status), PasswordGameSessionStatus.Completed, PasswordGameSessionStatus.InProgress, ct);
+        var ranking = await GetModeStatsAsync(db.RankingGameSessions.Select(s => s.Status), RankingGameSessionStatus.Completed, RankingGameSessionStatus.InProgress, ct);
+        var top100 = await GetModeStatsAsync(db.Top100GameSessions.Select(s => s.Status), Top100GameSessionStatus.Completed, Top100GameSessionStatus.InProgress, ct);
 
         // A category counts once per session it appeared on the board in, regardless of
         // how many of its questions were actually revealed within that session.
@@ -70,5 +56,20 @@ public class GetDashboardStatsHandler(IApplicationDbContext db) : IQueryHandler<
             trivia.Completed + password.Completed + ranking.Completed + top100.Completed,
             trivia, password, ranking, top100,
             topCategories);
+    }
+
+    private static async Task<ModeStatsDto> GetModeStatsAsync<TStatus>(
+        IQueryable<TStatus> statuses, TStatus completedValue, TStatus inProgressValue, CancellationToken ct)
+        where TStatus : struct, Enum
+    {
+        var counts = await statuses
+            .GroupBy(s => s)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+
+        return new ModeStatsDto(
+            counts.Values.Sum(),
+            counts.GetValueOrDefault(completedValue),
+            counts.GetValueOrDefault(inProgressValue));
     }
 }

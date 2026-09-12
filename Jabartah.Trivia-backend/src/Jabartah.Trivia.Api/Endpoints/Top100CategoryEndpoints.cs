@@ -1,5 +1,6 @@
 using Jabartah.Trivia.Application.Abstractions;
 using Jabartah.Trivia.Application.Categories.ListTop100Categories;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -9,6 +10,7 @@ public static class Top100CategoryEndpoints
     {
         app.MapGet("/api/top100-categories", async (IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new ListTop100CategoriesQuery(), ct)))
-            .WithTags("Top100Categories");
+            .WithTags("Top100Categories")
+            .CacheOutput("categories");
     }
 }

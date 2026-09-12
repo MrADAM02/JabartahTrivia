@@ -3,6 +3,7 @@ using Jabartah.Trivia.Application.Auth.DeleteAccount;
 using Jabartah.Trivia.Application.Auth.GetAccount;
 using Jabartah.Trivia.Application.Auth.Login;
 using Jabartah.Trivia.Application.Auth.Register;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -10,7 +11,7 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        var auth = app.MapGroup("/api/auth").WithTags("Auth");
+        var auth = app.MapGroup("/api/auth").WithTags("Auth").RequireRateLimiting("auth");
 
         auth.MapPost("/register", async (RegisterCommand command, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(command, ct)));

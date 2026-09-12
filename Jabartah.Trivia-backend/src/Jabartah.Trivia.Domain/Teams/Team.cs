@@ -15,8 +15,12 @@ public class Team
 
     private Team() { } // EF Core
 
-    public static Team Create(Guid gameSessionId, string name, int turnOrder, string? color = null, string? icon = null) =>
-        new()
+    public static Team Create(Guid gameSessionId, string name, int turnOrder, string? color = null, string? icon = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفريق مطلوب.", nameof(name));
+
+        return new Team
         {
             Id = Guid.NewGuid(),
             GameSessionId = gameSessionId,
@@ -26,6 +30,7 @@ public class Team
             Icon = icon,
             TurnOrder = turnOrder
         };
+    }
 
     public void AddPoints(int points) => Score += points;
 

@@ -9,14 +9,19 @@ public class Category
 
     private Category() { } // EF Core
 
-    public static Category Create(string name, string? icon = null, Guid? ownerUserId = null) =>
-        new()
+    public static Category Create(string name, string? icon = null, Guid? ownerUserId = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("اسم الفئة مطلوب.", nameof(name));
+
+        return new Category
         {
             Id = Guid.NewGuid(),
             Name = name,
             Icon = icon,
             OwnerUserId = ownerUserId
         };
+    }
 
     public void Rename(string name) => Name = name;
 
