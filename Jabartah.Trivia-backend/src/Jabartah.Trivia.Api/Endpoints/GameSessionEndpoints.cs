@@ -6,6 +6,7 @@ using Jabartah.Trivia.Application.GameSessions.EndGame;
 using Jabartah.Trivia.Application.GameSessions.GetBoard;
 using Jabartah.Trivia.Application.GameSessions.RevealAnswer;
 using Jabartah.Trivia.Application.GameSessions.SelectQuestion;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -16,7 +17,8 @@ public static class GameSessionEndpoints
         var group = app.MapGroup("/api/game-sessions").WithTags("GameSessions");
 
         group.MapPost("/", async (CreateGameSessionCommand command, IDispatcher dispatcher, CancellationToken ct) =>
-            Results.Ok(await dispatcher.Send(command, ct)));
+            Results.Ok(await dispatcher.Send(command, ct)))
+            .RequireRateLimiting("write");
 
         group.MapGet("/{id:guid}/board", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new GetBoardQuery(id), ct)));

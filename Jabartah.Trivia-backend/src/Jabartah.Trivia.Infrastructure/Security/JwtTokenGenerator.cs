@@ -16,7 +16,7 @@ public class JwtTokenGenerator(IConfiguration configuration) : IJwtTokenGenerato
         var key = jwtSection["Key"] ?? throw new InvalidOperationException("Missing 'Jwt:Key'.");
         var issuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("Missing 'Jwt:Issuer'.");
         var audience = jwtSection["Audience"] ?? throw new InvalidOperationException("Missing 'Jwt:Audience'.");
-        var expiryMinutes = int.Parse(jwtSection["ExpiryMinutes"] ?? "10080");
+        var expiryMinutes = int.Parse(jwtSection["ExpiryMinutes"] ?? "1440");
 
         var claims = new[]
         {

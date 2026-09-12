@@ -6,6 +6,7 @@ using Jabartah.Trivia.Application.PasswordGame.IssueRevealToken;
 using Jabartah.Trivia.Application.PasswordGame.ResolveRound;
 using Jabartah.Trivia.Application.PasswordGame.StartNextRound;
 using Jabartah.Trivia.Application.PasswordGame.UseExtraTime;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -16,7 +17,8 @@ public static class PasswordGameEndpoints
         var group = app.MapGroup("/api/password-sessions").WithTags("PasswordGame");
 
         group.MapPost("/", async (CreatePasswordGameSessionCommand command, IDispatcher dispatcher, CancellationToken ct) =>
-            Results.Ok(await dispatcher.Send(command, ct)));
+            Results.Ok(await dispatcher.Send(command, ct)))
+            .RequireRateLimiting("write");
 
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new GetPasswordSessionQuery(id), ct)));
@@ -26,7 +28,8 @@ public static class PasswordGameEndpoints
 
         group.MapPost("/{id:guid}/rounds/{roundId:guid}/reveal-token", async (
                 Guid id, Guid roundId, IDispatcher dispatcher, CancellationToken ct) =>
-            Results.Ok(await dispatcher.Send(new IssueRevealTokenCommand(id, roundId), ct)));
+            Results.Ok(await dispatcher.Send(new IssueRevealTokenCommand(id, roundId), ct)))
+            .RequireRateLimiting("write");
 
         group.MapPost("/{id:guid}/rounds/{roundId:guid}/resolve", async (
                 Guid id, Guid roundId, ResolveRoundRequest body, IDispatcher dispatcher, CancellationToken ct) =>

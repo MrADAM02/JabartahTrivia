@@ -5,6 +5,7 @@ using Jabartah.Trivia.Application.RankingGame.GetSession;
 using Jabartah.Trivia.Application.RankingGame.RevealPosition;
 using Jabartah.Trivia.Application.RankingGame.StartNextRound;
 using Jabartah.Trivia.Application.RankingGame.SubmitRound;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -15,7 +16,8 @@ public static class RankingGameEndpoints
         var group = app.MapGroup("/api/ranking-sessions").WithTags("RankingGame");
 
         group.MapPost("/", async (CreateRankingGameSessionCommand command, IDispatcher dispatcher, CancellationToken ct) =>
-            Results.Ok(await dispatcher.Send(command, ct)));
+            Results.Ok(await dispatcher.Send(command, ct)))
+            .RequireRateLimiting("write");
 
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new GetRankingSessionQuery(id), ct)));

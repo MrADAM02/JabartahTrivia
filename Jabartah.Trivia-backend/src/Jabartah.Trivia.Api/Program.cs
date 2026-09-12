@@ -45,6 +45,9 @@ builder.Services.AddOpenApi();
 
 // 5 requests/minute/IP on /api/auth -- generous enough for a mistyped password retry,
 // tight enough to blunt brute-force/credential-stuffing against login and register.
+// A separate, looser "write" policy covers session/reveal-token creation elsewhere --
+// those are unauthenticated by design (no login exists for regular players) so without
+// this, a scripted loop could grow the DB unbounded now that the API is internet-reachable.
 builder.Services.AddRateLimiter(options =>
 {
     options.OnRejected = async (context, ct) =>
@@ -58,7 +61,19 @@ builder.Services.AddRateLimiter(options =>
         o.Window = TimeSpan.FromMinutes(1);
         o.QueueLimit = 0;
     });
+    options.AddFixedWindowLimiter("write", o =>
+    {
+        o.PermitLimit = 20;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueLimit = 0;
+    });
 });
+
+// Framework default (~28MB) is far more than any legitimate request here needs --
+// the largest real payload is a session-creation call (a few team names + category
+// GUIDs). Capping this tightens the body-size amplification available to an attacker
+// spamming the unauthenticated session-creation endpoints above.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 256 * 1024);
 
 // Content behind these 4 endpoints only ever changes through the admin panel, which is
 // infrequent -- a short TTL trades a sub-minute staleness window for zero invalidation
@@ -140,6 +155,21 @@ app.Use(async (context, next) =>
             .ExecuteAsync(context);
     }
 });
+
+// Defense-in-depth response headers -- cheap to add, no downside, and there's now a real
+// public origin (VPS + reverse proxy) fronting this API instead of just a LAN dev box.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 
 app.UseCors();
 app.UseAuthentication();

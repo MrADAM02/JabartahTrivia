@@ -4,6 +4,7 @@ using Jabartah.Trivia.Application.Top100Game.EndGame;
 using Jabartah.Trivia.Application.Top100Game.GetSession;
 using Jabartah.Trivia.Application.Top100Game.StartNextRound;
 using Jabartah.Trivia.Application.Top100Game.SubmitGuess;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Jabartah.Trivia.Api.Endpoints;
 
@@ -14,7 +15,8 @@ public static class Top100GameEndpoints
         var group = app.MapGroup("/api/top100-sessions").WithTags("Top100Game");
 
         group.MapPost("/", async (CreateTop100GameSessionCommand command, IDispatcher dispatcher, CancellationToken ct) =>
-            Results.Ok(await dispatcher.Send(command, ct)));
+            Results.Ok(await dispatcher.Send(command, ct)))
+            .RequireRateLimiting("write");
 
         group.MapGet("/{id:guid}", async (Guid id, IDispatcher dispatcher, CancellationToken ct) =>
             Results.Ok(await dispatcher.Send(new GetTop100SessionQuery(id), ct)));
